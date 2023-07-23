@@ -6,17 +6,20 @@ import (
 	"go.uber.org/zap"
 )
 
+// Itsy is the main application struct.
 type Itsy struct {
 	router *Router
+
 	Logger *zap.Logger
 }
 
 // New creates a new Itsy instance.
 func New() *Itsy {
-	return &Itsy{
-		router: NewRouter(),
+	itsy := &Itsy{
 		Logger: SetupLogger(),
 	}
+	itsy.router = NewRouter(itsy)
+	return itsy
 }
 
 // GET registers a handler for a GET request.

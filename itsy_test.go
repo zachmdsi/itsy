@@ -10,8 +10,8 @@ import (
 func TestItsySuccess(t *testing.T) {
 	app := New()
 
-	app.GET("/hello", func(ctx *Context) {
-		ctx.ResponseWriter.Write([]byte("Hello, itsy!"))
+	app.GET("/hello", func(ctx Context) {
+		ctx.ResponseWriter().Write([]byte("Hello, itsy!"))
 	})
 
 	req, err := http.NewRequest("GET", "/hello", nil)
