@@ -15,20 +15,36 @@ type Itsy struct {
 func New() *Itsy {
 	return &Itsy{
 		router: NewRouter(),
+		Logger: SetupLogger(),
 	}
 }
 
-// GET registers a handler for the GET HTTP method.
+// GET registers a handler for a GET request.
 func (i *Itsy) GET(route string, handler HandlerFunc) {
 	i.router.Handle("GET", route, handler)
 }
 
-// POST registers a handler for the POST HTTP method.
+// POST registers a handler for a POST request.
 func (i *Itsy) POST(route string, handler HandlerFunc) {
 	i.router.Handle("POST", route, handler)
 }
 
-// Run starts the HTTP server.
+// PUT registers a handler for a PUT request.
+func (i *Itsy) PUT(route string, handler HandlerFunc) {
+	i.router.Handle("PUT", route, handler)
+}
+
+// DELETE registers a handler for a DELETE request.
+func (i *Itsy) DELETE(route string, handler HandlerFunc) {
+	i.router.Handle("DELETE", route, handler)
+}
+
+// PATCH registers a handler for a PATCH request.
+func (i *Itsy) PATCH(route string, handler HandlerFunc) {
+	i.router.Handle("PATCH", route, handler)
+}
+
+// Run starts the HTTP server. 
 func (i *Itsy) Run(addr string) {
 	http.ListenAndServe(addr, i.router)
 }

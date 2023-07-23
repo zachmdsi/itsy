@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestItsySuccess tests a successful request.
 func TestItsySuccess(t *testing.T) {
 	app := New()
 
@@ -30,6 +31,7 @@ func TestItsySuccess(t *testing.T) {
 	}
 }
 
+// TestItsyNotFound tests a request for a non-existent route.
 func TestItsyNotFound(t *testing.T) {
 	app := New()
 
