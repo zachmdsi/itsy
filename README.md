@@ -27,7 +27,7 @@ func main() {
   i.GET("/books/:title", func(ctx itsy.Context) error {
     // Fetch book data and create a new Book resource
     title := ctx.Request().URL.Query().Get("title")
-    book := itsy.NewBook(title, "John Doe")
+    book := NewBook(title, "John Doe")
 
     // Render the Book resource as JSON
     return ctx.RenderResource(book)
@@ -35,6 +35,44 @@ func main() {
 
   i.Run(":8080")
 }
+```
+
+## Features
+
+- **Routing**: Easily define routes for your API with GET, POST, PUT, DELETE, and PATCH HTTP methods.
+- **Middleware**: Stack up middleware functions that can manipulate the request and response objects.
+- **Logger**: Uses zap logger for efficient structured logging.
+- **Hypermedia Controls**: itsy uses hypermedia concepts for API responses, making APIs self-descriptive and easier to navigate for clients.
+
+## Hypermedia Resource
+
+A hypermedia resource in itsy can be any type that implements the `Resource` interface. Resources represent data and associated hypermedia controls.
+
+```go
+type Book struct {
+  *itsy.BaseResource
+  Title  string `json:"title"`
+  Author string `json:"author"`
+}
+
+func NewBook(title string, author string) *Book {
+  book := &Book{
+    BaseResource: &itsy.BaseResource{
+      Links: []itsy.Link{
+        {
+          Rel:    "self",
+          Href:   "/books/" + title,
+          Prompt: "Self",
+        },
+      },
+    },
+    Title:  title,
+    Author: author,
+  }
+
+  return book
+}
+
 ```
 
 ## Contribute
