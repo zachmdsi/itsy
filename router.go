@@ -5,33 +5,6 @@ import (
 	"strings"
 )
 
-// Router is a tree of nodes that handles HTTP requests.
-type Router struct {
-	// Index is the root node of the router tree.
-	Index *Route
-
-	// itsy is a reference to the main framework instance.
-	itsy *Itsy
-}
-
-// HandlerFunc is a function that handles an HTTP request.
-type HandlerFunc func(Context) error
-
-// Route is a node in the router tree.
-type Route struct {
-	// Path is the path segment of the node.
-	Path string
-
-	// Handlers is a map of HTTP methods to handlers.
-	Handlers map[string]HandlerFunc
-
-	// Children is a map of path segments to child nodes.
-	Children map[string]*Route
-
-	// IsParam is true if the path segment is a parameter.
-	IsParam bool
-}
-
 // NewRouter creates a new router instance.
 func NewRouter(itsy *Itsy) *Router {
 	return &Router{
@@ -45,7 +18,12 @@ func NewRouter(itsy *Itsy) *Router {
 
 // Handle registers a handler for a given HTTP method and path.
 func (r *Router) Handle(method string, route string, handler HandlerFunc) {
-	segments := strings.Split(route, "/")[1:] // Skip the first empty string.
+	// Apply middlewares in reverse order so that the first middleware added is the first to be called.
+	for i := len(r.itsy.middlewares) - 1; i >= 0; i-- {
+		handler = r.itsy.middlewares[i](handler)
+	}
+
+	segments := strings.FieldsFunc(route, func(r rune) bool { return r == '/' })
 	currentNode := r.Index
 	for _, segment := range segments {
 		// If the segment doesn't exist, create it.
@@ -60,13 +38,14 @@ func (r *Router) Handle(method string, route string, handler HandlerFunc) {
 		// Move to the next node.
 		currentNode = currentNode.Children[segment]
 	}
+
 	// Register the handler for the given method.
 	currentNode.Handlers[method] = handler
 }
 
 // ServeHTTP is the entry point for all HTTP requests.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	segments := strings.Split(req.URL.Path, "/")[1:] // Skip the first empty string
+	segments := strings.FieldsFunc(req.URL.Path, func(r rune) bool { return r == '/' })
 	currentNode := r.Index
 	params := make(map[string]string)
 	for _, segment := range segments {
@@ -87,7 +66,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 			// If no parameterized route is found, return a 404.
 			if !found {
-				HTTPError(404, w, req)
+				HTTPError(http.StatusNotFound, w, req)
 				return
 			}
 		}
@@ -100,6 +79,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		handler(ctx)
 	} else {
 		// If no handler is found, return a 405.
-		HTTPError(405, w, req)
+		HTTPError(http.StatusMethodNotAllowed, w, req)
 	}
 }

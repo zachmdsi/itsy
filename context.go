@@ -7,14 +7,9 @@ import (
 )
 
 type Context interface {
-	// Request returns the HTTP request.
-	Request() *http.Request
-
-	// ResponseWriter returns the HTTP response writer.
-	ResponseWriter() http.ResponseWriter
-
-	// Logger returns the logger instance.
-	Logger() *zap.Logger
+	Request()        *http.Request       // Request returns the HTTP request.
+	ResponseWriter() http.ResponseWriter // ResponseWriter returns the HTTP response writer.
+	Logger()         *zap.Logger         // Logger returns the logger instance.
 }
 
 type BaseContext struct {
@@ -35,10 +30,10 @@ func (c *BaseContext) ResponseWriter() http.ResponseWriter {
 	return c.responseWriter
 }
 
-func (i *Itsy) newBaseContext(req *http.Request, w http.ResponseWriter) *BaseContext {
-	clonedLogger := i.Logger.With(zap.String("request_id", req.Header.Get("X-Request-Id")))
+func (i *Itsy) newBaseContext(r *http.Request, w http.ResponseWriter) *BaseContext {
+	clonedLogger := i.Logger.With(zap.String("request_id", r.Header.Get("X-Request-Id")))
 	return &BaseContext{
-		request:        req,
+		request:        r,
 		responseWriter: w,
 		logger:         clonedLogger,
 	}

@@ -16,20 +16,16 @@ func TestRouter(t *testing.T) {
 		return nil
 	})
 
-	req, err := http.NewRequest("GET", "/hello", nil)
-	if err != nil {
-		t.Fatalf("Could not create request: %v", err)
+	req := httptest.NewRequest("GET", "/hello", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %v", w.Code)
 	}
 
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Errorf("Expected status 200 OK, got %v", rec.Code)
-	}
-
-	if rec.Body.String() != "Hello, world!" {
-		t.Errorf("Expected body 'Hello, world!', got '%v'", rec.Body.String())
+	if w.Body.String() != "Hello, world!" {
+		t.Errorf("Expected body 'Hello, world!', got '%v'", w.Body.String())
 	}
 }
 
@@ -38,16 +34,12 @@ func TestRouterNoRoute(t *testing.T) {
 	itsy := New()
 	router := NewRouter(itsy)
 
-	req, err := http.NewRequest("GET", "/unknown", nil)
-	if err != nil {
-		t.Fatalf("Could not create request: %v", err)
-	}
+	req := httptest.NewRequest("GET", "/unknown", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
 
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404 Not Found, got %v", rec.Code)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404 Not Found, got %v", w.Code)
 	}
 }
 
@@ -57,16 +49,12 @@ func TestRouterMethodNotAllowed(t *testing.T) {
 	router := NewRouter(itsy)
 	router.Handle("GET", "/onlyget", func(ctx Context) error { return nil })
 
-	req, err := http.NewRequest("POST", "/onlyget", nil)
-	if err != nil {
-		t.Fatalf("Could not create request: %v", err)
-	}
+	req := httptest.NewRequest("POST", "/onlyget", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
 
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusMethodNotAllowed {
-		t.Errorf("Expected status 405 Method Not Allowed, got %v", rec.Code)
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected status 405 Method Not Allowed, got %v", w.Code)
 	}
 }
 
@@ -80,19 +68,15 @@ func TestRouterParam(t *testing.T) {
 		return nil
 	})
 
-	req, err := http.NewRequest("GET", "/hello/world", nil)
-	if err != nil {
-		t.Fatalf("Could not create request: %v", err)
+	req := httptest.NewRequest("GET", "/hello/world", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %v", w.Code)
 	}
 
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Errorf("Expected status 200 OK, got %v", rec.Code)
-	}
-
-	if rec.Body.String() != "Hello, world!" {
-		t.Errorf("Expected body 'Hello, world!', got '%v'", rec.Body.String())
+	if w.Body.String() != "Hello, world!" {
+		t.Errorf("Expected body 'Hello, world!', got '%v'", w.Body.String())
 	}
 }
