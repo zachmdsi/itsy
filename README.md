@@ -78,3 +78,7 @@ func NewBook(title string, author string) *Book {
 ## Contribute
 
 Contributions are welcome. Please submit a pull request or create an issue for any enhancements you think of.
+
+### Version
+
+v0.1.0
