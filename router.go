@@ -1,39 +1,105 @@
 package itsy
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
+// Router is a tree of nodes that handles HTTP requests.
 type Router struct {
-	// handlers maps a HTTP method + path to a handler function.
-	handlers map[string]HandlerFunc
+	// Index is the root node of the router tree.
+	Index *Route
 
-	// itsy is a reference to the Itsy application.
+	// itsy is a reference to the main framework instance.
 	itsy *Itsy
 }
 
-type HandlerFunc func(Context)
+// HandlerFunc is a function that handles an HTTP request.
+type HandlerFunc func(Context) error
+
+// Route is a node in the router tree.
+type Route struct {
+	// Path is the path segment of the node.
+	Path string
+
+	// Handlers is a map of HTTP methods to handlers.
+	Handlers map[string]HandlerFunc
+
+	// Children is a map of path segments to child nodes.
+	Children map[string]*Route
+
+	// IsParam is true if the path segment is a parameter.
+	IsParam bool
+}
 
 // NewRouter creates a new router instance.
 func NewRouter(itsy *Itsy) *Router {
 	return &Router{
-		handlers: make(map[string]HandlerFunc),
+		Index: &Route{
+			Handlers: make(map[string]HandlerFunc),
+			Children: make(map[string]*Route),
+		},
 		itsy: itsy,
 	}
 }
 
 // Handle registers a handler for a given HTTP method and path.
 func (r *Router) Handle(method string, route string, handler HandlerFunc) {
-	key := method + "-" + route
-	r.handlers[key] = handler
+	segments := strings.Split(route, "/")[1:] // Skip the first empty string.
+	currentNode := r.Index
+	for _, segment := range segments {
+		// If the segment doesn't exist, create it.
+		if currentNode.Children[segment] == nil {
+			currentNode.Children[segment] = &Route{
+				Path:     segment,
+				Handlers: make(map[string]HandlerFunc),
+				Children: make(map[string]*Route),
+				IsParam:  strings.HasPrefix(segment, ":"),
+			}
+		}
+		// Move to the next node.
+		currentNode = currentNode.Children[segment]
+	}
+	// Register the handler for the given method.
+	currentNode.Handlers[method] = handler
 }
 
 // ServeHTTP is the entry point for all HTTP requests.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	key := req.Method + "-" + req.URL.Path
-	if handler, ok := r.handlers[key]; ok {
-		ctx := r.itsy.newBaseContext(req, w) 
+	segments := strings.Split(req.URL.Path, "/")[1:] // Skip the first empty string
+	currentNode := r.Index
+	params := make(map[string]string)
+	for _, segment := range segments {
+		// If a direct match is found, move to the next node
+		if child, ok := currentNode.Children[segment]; ok {
+			currentNode = child
+		} else {
+			// If a direct match isn't found, try to match a parameterized route
+			found := false
+			for key, child := range currentNode.Children {
+				if strings.HasPrefix(key, ":") {
+					params[key[1:]] = segment
+					currentNode = child
+					found = true
+					break
+				}
+			}
+
+			// If no parameterized route is found, return a 404.
+			if !found {
+				HTTPError(404, w, req)
+				return
+			}
+		}
+	}
+
+	// If a handler is found for the given method, call it.
+	if handler, ok := currentNode.Handlers[req.Method]; ok {
+		ctx := r.itsy.newBaseContext(req, w)
+		// TODO: add params to context
 		handler(ctx)
 	} else {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 Not Found"))
+		// If no handler is found, return a 405.
+		HTTPError(405, w, req)
 	}
 }

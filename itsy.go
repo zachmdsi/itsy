@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Itsy is the main application struct.
+// Itsy is the main framework instance.
 type Itsy struct {
 	router *Router
 
@@ -47,7 +47,7 @@ func (i *Itsy) PATCH(route string, handler HandlerFunc) {
 	i.router.Handle("PATCH", route, handler)
 }
 
-// Run starts the HTTP server. 
+// Run starts the HTTP server.
 func (i *Itsy) Run(addr string) {
 	http.ListenAndServe(addr, i.router)
 }

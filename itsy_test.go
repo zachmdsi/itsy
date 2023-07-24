@@ -6,15 +6,16 @@ import (
 	"testing"
 )
 
-// TestItsySuccess tests a successful request.
-func TestItsySuccess(t *testing.T) {
+// TestItsyGET tests GET request handling in Itsy.
+func TestItsyGET(t *testing.T) {
 	app := New()
 
-	app.GET("/hello", func(ctx Context) {
-		ctx.ResponseWriter().Write([]byte("Hello, itsy!"))
+	app.GET("/get", func(ctx Context) error {
+		ctx.ResponseWriter().Write([]byte("GET, itsy!"))
+		return nil
 	})
 
-	req, err := http.NewRequest("GET", "/hello", nil)
+	req, err := http.NewRequest("GET", "/get", nil)
 	if err != nil {
 		t.Fatalf("Could not create request: %v", err)
 	}
@@ -26,16 +27,21 @@ func TestItsySuccess(t *testing.T) {
 		t.Errorf("Expected status 200 OK, got %v", rec.Code)
 	}
 
-	if rec.Body.String() != "Hello, itsy!" {
-		t.Errorf("Expected body: 'Hello, itsy!', got %v", rec.Body.String())
+	if rec.Body.String() != "GET, itsy!" {
+		t.Errorf("Expected body: 'GET, itsy!', got '%v'", rec.Body.String())
 	}
 }
 
-// TestItsyNotFound tests a request for a non-existent route.
-func TestItsyNotFound(t *testing.T) {
+// TestItsyPOST tests POST request handling in Itsy.
+func TestItsyPOST(t *testing.T) {
 	app := New()
 
-	req, err := http.NewRequest("GET", "/notfound", nil)
+	app.POST("/post", func(ctx Context) error {
+		ctx.ResponseWriter().Write([]byte("POST, itsy!"))
+		return nil
+	})
+
+	req, err := http.NewRequest("POST", "/post", nil)
 	if err != nil {
 		t.Fatalf("Could not create request: %v", err)
 	}
@@ -43,11 +49,89 @@ func TestItsyNotFound(t *testing.T) {
 	rec := httptest.NewRecorder()
 	app.router.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404 Not Found, got %v", rec.Code)
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %v", rec.Code)
 	}
 
-	if rec.Body.String() != "404 Not Found" {
-		t.Errorf("Expected body: '404 Not Found', got %v", rec.Body.String())
+	if rec.Body.String() != "POST, itsy!" {
+		t.Errorf("Expected body: 'POST, itsy!', got '%v'", rec.Body.String())
+	}
+}
+
+// TestItsyPUT tests PUT request handling in Itsy.
+func TestItsyPUT(t *testing.T) {
+	app := New()
+
+	app.PUT("/put", func(ctx Context) error {
+		ctx.ResponseWriter().Write([]byte("PUT, itsy!"))
+		return nil
+	})
+
+	req, err := http.NewRequest("PUT", "/put", nil)
+	if err != nil {
+		t.Fatalf("Could not create request: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	app.router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %v", rec.Code)
+	}
+
+	if rec.Body.String() != "PUT, itsy!" {
+		t.Errorf("Expected body: 'PUT, itsy!', got '%v'", rec.Body.String())
+	}
+}
+
+// TestItsyDELETE tests DELETE request handling in Itsy.
+func TestItsyDELETE(t *testing.T) {
+	app := New()
+
+	app.DELETE("/delete", func(ctx Context) error {
+		ctx.ResponseWriter().Write([]byte("DELETE, itsy!"))
+		return nil
+	})
+
+	req, err := http.NewRequest("DELETE", "/delete", nil)
+	if err != nil {
+		t.Fatalf("Could not create request: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	app.router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %v", rec.Code)
+	}
+
+	if rec.Body.String() != "DELETE, itsy!" {
+		t.Errorf("Expected body: 'DELETE, itsy!', got '%v'", rec.Body.String())
+	}
+}
+
+// TestItsyPATCH tests PATCH request handling in Itsy.
+func TestItsyPATCH(t *testing.T) {
+	app := New()
+
+	app.PATCH("/patch", func(ctx Context) error {
+		ctx.ResponseWriter().Write([]byte("PATCH, itsy!"))
+		return nil
+	})
+
+	req, err := http.NewRequest("PATCH", "/patch", nil)
+	if err != nil {
+		t.Fatalf("Could not create request: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	app.router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %v", rec.Code)
+	}
+
+	if rec.Body.String() != "PATCH, itsy!" {
+		t.Errorf("Expected body: 'PATCH, itsy!', got '%v'", rec.Body.String())
 	}
 }

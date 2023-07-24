@@ -20,7 +20,7 @@ type Context interface {
 type BaseContext struct {
 	request        *http.Request
 	responseWriter http.ResponseWriter
-	logger 	       *zap.Logger
+	logger         *zap.Logger
 }
 
 func (c *BaseContext) Request() *http.Request {
@@ -38,8 +38,8 @@ func (c *BaseContext) ResponseWriter() http.ResponseWriter {
 func (i *Itsy) newBaseContext(req *http.Request, w http.ResponseWriter) *BaseContext {
 	clonedLogger := i.Logger.With(zap.String("request_id", req.Header.Get("X-Request-Id")))
 	return &BaseContext{
-		request: req,
+		request:        req,
 		responseWriter: w,
-		logger: clonedLogger,
+		logger:         clonedLogger,
 	}
 }
