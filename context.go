@@ -13,6 +13,7 @@ type (
 		Request() *http.Request              // Request returns the HTTP request.
 		ResponseWriter() http.ResponseWriter // ResponseWriter returns the HTTP response writer.
 		Logger() *zap.Logger                 // Logger returns the logger instance.
+		RenderResource(res Resource) error   // RenderResource renders a resource as JSON.
 	}
 	BaseContext struct {
 		request        *http.Request
@@ -21,8 +22,13 @@ type (
 	}
 )
 
+// Request returns the HTTP request.
 func (c *BaseContext) Request() *http.Request { return c.request }
+
+// Logger returns the logger instance.
 func (c *BaseContext) Logger() *zap.Logger { return c.logger }
+
+// ResponseWriter returns the HTTP response writer.
 func (c *BaseContext) ResponseWriter() http.ResponseWriter { return c.responseWriter }
 
 // RenderResource renders a resource as JSON.
