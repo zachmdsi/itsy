@@ -12,22 +12,10 @@ type (
 		router      *Router      // router is the main router tree
 		middlewares []Middleware // middlewares is a list of middleware
 
-		Logger *zap.Logger       // Logger is a zap logger
+		Logger *zap.Logger // Logger is a zap logger
 	}
-	// Router is the tree of routes
-	Router struct {
-		Index *Route // Index is the root node of the router tree.
-		itsy  *Itsy  // itsy is a reference to the main framework instance.
-	}
-	// Route represents a node in a router
-	Route struct {
-		Path     string                 // Path is the path segment of the node.
-		Handlers map[string]HandlerFunc // Handlers is a map of HTTP methods to handlers.
-		Children map[string]*Route      // Children is a map of path segments to child nodes.
-		IsParam  bool                   // IsParam is true if the path segment is a parameter.
-	}
-	Middleware func(HandlerFunc) HandlerFunc
-	HandlerFunc func(Context) error
+	Middleware  func(HandlerFunc) HandlerFunc // Middleware is a function that wraps a handler.
+	HandlerFunc func(Context) error           // HandlerFunc is a function that handles a request.
 )
 
 // New creates a new Itsy instance.
@@ -65,7 +53,7 @@ func (i *Itsy) PATCH(route string, handler HandlerFunc) {
 }
 
 // Use adds a new middleware
-func(i *Itsy) Use(m Middleware) {
+func (i *Itsy) Use(m Middleware) {
 	i.middlewares = append(i.middlewares, m)
 }
 

@@ -19,6 +19,7 @@ func TestItsyGET(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/get", nil)
 	w := httptest.NewRecorder()
+
 	itsy.router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {

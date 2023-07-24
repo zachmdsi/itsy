@@ -5,6 +5,21 @@ import (
 	"strings"
 )
 
+type (
+	// Router is the tree of routes
+	Router struct {
+		Index *Route // Index is the root node of the router tree.
+		itsy  *Itsy  // itsy is a reference to the main framework instance.
+	}
+	// Route represents a node in a router
+	Route struct {
+		Path     string                 // Path is the path segment of the node.
+		Handlers map[string]HandlerFunc // Handlers is a map of HTTP methods to handlers.
+		Children map[string]*Route      // Children is a map of path segments to child nodes.
+		IsParam  bool                   // IsParam is true if the path segment is a parameter.
+	}
+)
+
 // NewRouter creates a new router instance.
 func NewRouter(itsy *Itsy) *Router {
 	return &Router{
