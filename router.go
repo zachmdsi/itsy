@@ -81,7 +81,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 			// If no parameterized route is found, return a 404.
 			if !found {
-				HTTPError(http.StatusNotFound, w, req)
+				HTTPError(http.StatusNotFound, w)
 				return
 			}
 		}
@@ -94,6 +94,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		handler(ctx)
 	} else {
 		// If no handler is found, return a 405.
-		HTTPError(http.StatusMethodNotAllowed, w, req)
+		HTTPError(http.StatusMethodNotAllowed, w)
 	}
 }

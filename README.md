@@ -9,7 +9,7 @@ _itsy is under active development and is not fully intended for production use._
 Install the package:
 
 ```bash
-go get github.com/zachmdsi/itsy
+go get -u github.com/zachmdsi/itsy
 ```
 
 ## Code Example

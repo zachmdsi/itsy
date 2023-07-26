@@ -1,7 +1,6 @@
 package itsy
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -15,47 +14,48 @@ type (
 		Logger() *zap.Logger                 // Logger returns the logger instance.
 		RenderResource(res Resource) error   // RenderResource renders a resource as JSON.
 	}
-	BaseContext struct {
-		request        *http.Request
-		responseWriter http.ResponseWriter
-		logger         *zap.Logger
+	baseContext struct {
+		request           *http.Request
+		responseWriter    http.ResponseWriter
+		logger            *zap.Logger
+		contentNegotiator *ContentNegotiator
 	}
 )
 
 // Request returns the HTTP request.
-func (c *BaseContext) Request() *http.Request { return c.request }
+func (c *baseContext) Request() *http.Request { return c.request }
 
 // Logger returns the logger instance.
-func (c *BaseContext) Logger() *zap.Logger { return c.logger }
+func (c *baseContext) Logger() *zap.Logger { return c.logger }
 
 // ResponseWriter returns the HTTP response writer.
-func (c *BaseContext) ResponseWriter() http.ResponseWriter { return c.responseWriter }
+func (c *baseContext) ResponseWriter() http.ResponseWriter { return c.responseWriter }
 
 // RenderResource renders a resource as JSON.
-func (c *BaseContext) RenderResource(res Resource) error {
-	c.ResponseWriter().Header().Set("Content-Type", "application/json")
-
-	// Convert to JSON
-	jsonBytes, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-
-	// Write the JSON to the response
-	_, err = c.ResponseWriter().Write(jsonBytes)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (c *baseContext) RenderResource(resource Resource) error {
+	renderer := c.contentNegotiator.GetRenderer(c.Request().Header.Get("Accept"))
+	return renderer.Render(c.ResponseWriter(), resource)
 }
 
-// newBaseContext creates a new base context.
-func (i *Itsy) newBaseContext(r *http.Request, w http.ResponseWriter) *BaseContext {
+// newbaseContext creates a new base context.
+func (i *Itsy) newBaseContext(r *http.Request, w http.ResponseWriter) *baseContext {
 	clonedLogger := i.Logger.With(zap.String("request_id", r.Header.Get("X-Request-Id")))
-	return &BaseContext{
-		request:        r,
-		responseWriter: w,
-		logger:         clonedLogger,
+	negotiator := i.newContentNegotiator()
+	return &baseContext{
+		request:           r,
+		responseWriter:    w,
+		logger:            clonedLogger,
+		contentNegotiator: negotiator,
 	}
+}
+
+// newContentNegotiator creates a new content negotiator.
+func (i *Itsy) newContentNegotiator() *ContentNegotiator {
+	negotiator := &ContentNegotiator{
+		renderers: map[string]Renderer{
+			"application/json": &JSONRenderer{},
+			"application/xml":  &XMLRenderer{},
+		},
+	}
+	return negotiator
 }
