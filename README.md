@@ -1,84 +1,44 @@
 # itsy
 
-**itsy** is a minimalistic, hypermedia-driven web framework in Go, focusing on simplicity and ease of use while offering core features such as routing, middleware, and logging. itsy is intended to be lightweight yet highly flexible, supporting the development of robust RESTful APIs with hypermedia controls.
+itsy is a lightweight web framework written in Go. It is designed to help developers build RESTful APIs that fully embrace the HATEOAS (Hypermedia as the Engine of Application State) principle. itsy provides a simple and intuitive interface for defining resources, handling requests, and rendering responses.
 
-_itsy is under active development and is not fully intended for production use._
+## Why itsy?
 
-## Quickstart
+RESTful APIs are a popular choice for many web applications due to their simplicity, scalability, and statelessness. However, many APIs do not fully embrace the principles of REST. In particular, they often ignore the HATEOAS principle, which states that a client should be able to navigate an API entirely through hypermedia provided by the server.
 
-Install the package:
+itsy aims to make it easy to build truly RESTful APIs by providing built-in support for HATEOAS. With itsy, you can define resources that include links, forms, embedded resources, templates, and actions, allowing clients to navigate your API without any out-of-band information.
 
-```bash
-go get -u github.com/zachmdsi/itsy
-```
+## Example
 
-## Code Example
+Here's a simple example of how to use itsy to create a RESTful API:
 
 ```go
 package main
 
 import (
-  "github.com/zachmdsi/itsy"
+  "net/http"
+  "itsy"
 )
 
+type HelloWorldResource struct {
+  itsy.BaseResource
+}
+
+func (h *HelloWorldResource) Render() string {
+  return "<h1>Hello, world!</h1>"
+}
+
 func main() {
-  i := itsy.New()
+  // Create a new itsy instance.
+  itsy := itsy.New()
 
-  i.GET("/books/:title", func(ctx itsy.Context) error {
-    // Fetch book data and create a new Book resource
-    title := ctx.Request().URL.Query().Get("title")
-    book := NewBook(title, "John Doe")
+  // Add a resource.
+  itsy.AddResource(http.MethodGet, "/hello", &HelloWorldResource{})
 
-    // Render the Book resource as JSON
-    return ctx.RenderResource(book)
-  })
-
-  i.Run(":8080")
-}
-```
-
-## Features
-
-- **Routing**: Easily define routes for your API with GET, POST, PUT, DELETE, and PATCH HTTP methods.
-- **Middleware**: Stack up middleware functions that can manipulate the request and response objects.
-- **Logger**: Uses zap logger for efficient structured logging.
-- **Hypermedia Controls**: itsy uses hypermedia concepts for API responses, making APIs self-descriptive and easier to navigate for clients.
-
-## Hypermedia Resource
-
-A hypermedia resource in itsy can be any type that implements the `Resource` interface. Resources represent data and associated hypermedia controls.
-
-```go
-type Book struct {
-  *itsy.BaseResource
-  Title  string `json:"title"`
-  Author string `json:"author"`
-}
-
-func NewBook(title string, author string) *Book {
-  book := &Book{
-    BaseResource: &itsy.BaseResource{
-      Links: []itsy.Link{
-        {
-          Rel:    "self",
-          Href:   "/books/" + title,
-          Prompt: "Self",
-        },
-      },
-    },
-    Title:  title,
-    Author: author,
-  }
-
-  return book
+  // Start the server.
+  itsy.Run(":8080")
 }
 
 ```
 
-## Contribute
-
-Contributions are welcome. Please submit a pull request or create an issue for any enhancements you think of.
-
-### Version
-
-v0.1.0
+In this example, we define a simple resource that returns a "Hello, world!" message when accessed with a GET request. We then add this resource to our itsy application and start the server.

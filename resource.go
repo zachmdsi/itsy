@@ -1,13 +1,30 @@
 package itsy
 
+import (
+	"bytes"
+	"text/template"
+)
+
 type (
 	// Resource is an interface that should be implemented by types that represent themselves as hypermedia resources.
 	Resource interface {
+		// GetLinks returns a slice of links that describe the resource.
 		GetLinks() []Link
+
+		// GetForms returns a slice of forms that describe the resource.
 		GetForms() []Form
+
+		// GetEmbeds returns a slice of embedded resources.
 		GetEmbeds() []Embed
+
+		// GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
 		GetTemplates() []Template
+
+		// GetActions returns a slice of actions that can be invoked by the client.
 		GetActions() []Action
+
+		// Render renders the HTML string representation of the resource.
+		Render() string
 	}
 	// Link represents link from one resource to another.
 	Link struct {
@@ -58,8 +75,54 @@ type (
 	}
 )
 
+var resourceTemplate = template.Must(template.New("resource").Parse(`
+<div>
+<h2>Links</h2>
+{{range .Links}}
+  <a href="{{.Href}}">{{.Prompt}}</a>
+{{end}}
+<h2>Forms</h2>
+{{range .Forms}}
+  <form action="{{.Href}}" method="{{.Method}}">
+  {{range .Fields}}
+    <label>{{.Name}}: <input type="text" name="{{.Name}}" value="{{.Value}}"></label>
+  {{end}}
+  <input type="submit" value="Submit">
+  </form>
+{{end}}
+<h2>Actions</h2>
+{{range .Actions}}
+  <form action="{{.Href}}" method="{{.Method}}">
+  {{range .Fields}}
+    <label>{{.Name}}: <input type="text" name="{{.Name}}" value="{{.Value}}"></label>
+  {{end}}
+  <input type="submit" value="Submit">
+  </form>
+{{end}}
+<h2>Embeds</h2>
+{{range .Embeds}}
+  <div>
+    <h3>{{.Rel}}</h3>
+    {{.Resource.Render}}
+  </div>
+{{end}}
+<h2>Templates</h2>
+{{range .Templates}}
+  <div>
+    <h3>{{.Name}}</h3>
+    <code>{{.Href}}</code>
+  </div>
+{{end}}
+</div>
+`))
+
 func (b *BaseResource) GetLinks() []Link         { return b.Links }
 func (b *BaseResource) GetForms() []Form         { return b.Forms }
 func (b *BaseResource) GetEmbeds() []Embed       { return b.Embeds }
 func (b *BaseResource) GetTemplates() []Template { return b.Templates }
 func (b *BaseResource) GetActions() []Action     { return b.Actions }
+func (b *BaseResource) Render() string {
+	var buf bytes.Buffer
+	resourceTemplate.Execute(&buf, b)
+	return buf.String()
+}

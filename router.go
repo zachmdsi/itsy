@@ -1,99 +1,47 @@
 package itsy
 
-import (
-	"net/http"
-	"strings"
-)
+import "strings" 
 
 type (
-	// Router is the tree of routes
-	Router struct {
-		Index *Route // Index is the root node of the router tree.
-		itsy  *Itsy  // itsy is a reference to the main framework instance.
+	// router is the main router tree
+	router struct {
+		index *node // index is the root node of the router tree
+		itsy  *Itsy // itsy is the main framework instance
 	}
-	// Route represents a node in a router
-	Route struct {
-		Path     string                 // Path is the path segment of the node.
-		Handlers map[string]HandlerFunc // Handlers is a map of HTTP methods to handlers.
-		Children map[string]*Route      // Children is a map of path segments to child nodes.
-		IsParam  bool                   // IsParam is true if the path segment is a parameter.
+
+	// node is a node in the router tree
+	node struct {
+		handlers map[string]HandlerFunc // handlers is a map of handlers for each method
+		children map[string]*node       // children is a map of child nodes
 	}
 )
 
-// NewRouter creates a new router instance.
-func NewRouter(itsy *Itsy) *Router {
-	return &Router{
-		Index: &Route{
-			Handlers: make(map[string]HandlerFunc),
-			Children: make(map[string]*Route),
+func newRouter(itsy *Itsy) *router {
+	return &router{
+		index: &node{
+			handlers: make(map[string]HandlerFunc),
+			children: make(map[string]*node),
 		},
 		itsy: itsy,
 	}
 }
 
-// Handle registers a handler for a given HTTP method and path.
-func (r *Router) Handle(method string, route string, handler HandlerFunc) {
-	// Apply middlewares in reverse order so that the first middleware added is the first to be called.
-	for i := len(r.itsy.middlewares) - 1; i >= 0; i-- {
-		handler = r.itsy.middlewares[i](handler)
-	}
-
-	segments := strings.FieldsFunc(route, func(r rune) bool { return r == '/' })
-	currentNode := r.Index
-	for _, segment := range segments {
-		// If the segment doesn't exist, create it.
-		if currentNode.Children[segment] == nil {
-			currentNode.Children[segment] = &Route{
-				Path:     segment,
-				Handlers: make(map[string]HandlerFunc),
-				Children: make(map[string]*Route),
-				IsParam:  strings.HasPrefix(segment, ":"),
-			}
-		}
-		// Move to the next node.
-		currentNode = currentNode.Children[segment]
-	}
-
-	// Register the handler for the given method.
-	currentNode.Handlers[method] = handler
-}
-
-// ServeHTTP is the entry point for all HTTP requests.
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	segments := strings.FieldsFunc(req.URL.Path, func(r rune) bool { return r == '/' })
-	currentNode := r.Index
-	params := make(map[string]string)
+func (r *router) addRoute(method, path string, handler HandlerFunc) {
+	segments := strings.FieldsFunc(path, func(r rune) bool { return r == '/' })
+	currentNode := r.index
 	for _, segment := range segments {
 		// If a direct match is found, move to the next node
-		if child, ok := currentNode.Children[segment]; ok {
+		if child, ok := currentNode.children[segment]; ok {
 			currentNode = child
 		} else {
-			// If a direct match isn't found, try to match a parameterized route
-			found := false
-			for key, child := range currentNode.Children {
-				if strings.HasPrefix(key, ":") {
-					params[key[1:]] = segment
-					currentNode = child
-					found = true
-					break
-				}
+			// If no direct match is found, create a new node
+			newNode := &node{
+				handlers: make(map[string]HandlerFunc),
+				children: make(map[string]*node),
 			}
-
-			// If no parameterized route is found, return a 404.
-			if !found {
-				HTTPError(http.StatusNotFound, w)
-				return
-			}
+			currentNode.children[segment] = newNode
+			currentNode = newNode
 		}
 	}
-
-	// If a handler is found for the given method, call it.
-	if handler, ok := currentNode.Handlers[req.Method]; ok {
-		ctx := r.itsy.newBaseContext(req, w)
-		// TODO: add params to context
-		handler(ctx)
-	} else {
-		// If no handler is found, return a 405.
-		HTTPError(http.StatusMethodNotAllowed, w)
-	}
+	currentNode.handlers[method] = handler
 }
