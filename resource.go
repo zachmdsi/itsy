@@ -13,7 +13,11 @@ type (
 		GetEmbeds() []Embed       // GetEmbeds returns a slice of embedded resources.
 		GetTemplates() []Template // GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
 		GetActions() []Action     // GetActions returns a slice of actions that can be invoked by the client.
-		Render(Context) string    // Render renders the HTML string representation of the resource given a context.
+
+		AddLink(href, prompt string) // AddLink adds a link to the resource.
+
+		RenderBase(Context) string // RenderBase renders the base context for the resource.
+		Render(Context) string     // Render renders the resource.
 	}
 	// Link represents link from one resource to another.
 	Link struct {
@@ -110,7 +114,13 @@ func (b *BaseResource) GetForms() []Form         { return b.Forms }
 func (b *BaseResource) GetEmbeds() []Embed       { return b.Embeds }
 func (b *BaseResource) GetTemplates() []Template { return b.Templates }
 func (b *BaseResource) GetActions() []Action     { return b.Actions }
-func (b *BaseResource) Render() string {
+func (b *BaseResource) Render(Context) string    { return "" }
+
+func (b *BaseResource) AddLink(href, prompt string) {
+	b.Links = append(b.Links, Link{Href: href, Prompt: prompt})
+}
+
+func (b *BaseResource) RenderBase(Context) string {
 	var buf bytes.Buffer
 	resourceTemplate.Execute(&buf, b)
 	return buf.String()

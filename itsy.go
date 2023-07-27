@@ -1,6 +1,7 @@
 package itsy
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -121,6 +122,9 @@ func (i *Itsy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // AddResource adds a resource to the Itsy instance.
 func (i *Itsy) AddResource(method, path string, resource Resource) {
+	// Add a "Self" link to the resource.
+	resource.AddLink(path, "Self")
+
 	// Add resource to the resources map.
 	i.resources[path] = resource
 	// Add a handler function for the resource to the router.
@@ -132,10 +136,24 @@ func (i *Itsy) AddResource(method, path string, resource Resource) {
 
 // handleResource handles a resource based on the HTTP method.
 func (i *Itsy) handleResource(ctx Context, resource Resource) error {
+	w := ctx.ResponseWriter()
+
 	switch ctx.Request().Method {
 	case http.MethodGet:
+		baseHtml := resource.RenderBase(ctx)
 		html := resource.Render(ctx)
-		ctx.ResponseWriter().Write([]byte(html))
+
+		// Set the Content-Type header to indicate that the response is HTML.
+		w.Header().Set("Content-Type", "text/html")
+
+		// Set the Link header to include links to other resources.
+		// You could get these links from the resource.
+		for _, link := range resource.GetLinks() {
+			w.Header().Add("Link", fmt.Sprintf("<%s>; rel=%q", link.Href, link.Rel))
+		}
+
+		// Write the response body.
+		w.Write([]byte(baseHtml + html))
 	case http.MethodPost:
 		// logic for POST requests
 	case http.MethodPut:
