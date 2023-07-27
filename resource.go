@@ -8,23 +8,12 @@ import (
 type (
 	// Resource is an interface that should be implemented by types that represent themselves as hypermedia resources.
 	Resource interface {
-		// GetLinks returns a slice of links that describe the resource.
-		GetLinks() []Link
-
-		// GetForms returns a slice of forms that describe the resource.
-		GetForms() []Form
-
-		// GetEmbeds returns a slice of embedded resources.
-		GetEmbeds() []Embed
-
-		// GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
-		GetTemplates() []Template
-
-		// GetActions returns a slice of actions that can be invoked by the client.
-		GetActions() []Action
-
-		// Render renders the HTML string representation of the resource.
-		Render() string
+		GetLinks() []Link         // GetLinks returns a slice of links that describe the resource.
+		GetForms() []Form         // GetForms returns a slice of forms that describe the resource.
+		GetEmbeds() []Embed       // GetEmbeds returns a slice of embedded resources.
+		GetTemplates() []Template // GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
+		GetActions() []Action     // GetActions returns a slice of actions that can be invoked by the client.
+		Render(Context) string    // Render renders the HTML string representation of the resource given a context.
 	}
 	// Link represents link from one resource to another.
 	Link struct {

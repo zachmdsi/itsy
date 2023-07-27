@@ -13,8 +13,8 @@ import (
 type (
 	// Itsy is the main framework instance.
 	Itsy struct {
-		router      *router             // router is the main router tree
-		resources   map[string]Resource // map of path to Resource
+		router    *router             // router is the main router tree
+		resources map[string]Resource // map of path to Resource
 
 		Logger *zap.Logger // Logger is a zap logger
 	}
@@ -24,7 +24,7 @@ type (
 // New creates a new Itsy instance.
 func New() *Itsy {
 	itsy := &Itsy{
-		Logger: setupLogger(),
+		Logger:    setupLogger(),
 		resources: make(map[string]Resource),
 	}
 	itsy.router = newRouter(itsy)
@@ -106,12 +106,17 @@ func (i *Itsy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// Create a new context
 	ctx := i.newBaseContext(req, w)
+	// Add the parameters to the context
+	for param, value := range params {
+		ctx.SetParam(param, value)
+	}
+
 	// Call the handler function
 	err := handler(ctx)
 	if err != nil {
 		HTTPError(http.StatusInternalServerError, w)
 		return
-	}	
+	}
 }
 
 // AddResource adds a resource to the Itsy instance.
@@ -129,7 +134,7 @@ func (i *Itsy) AddResource(method, path string, resource Resource) {
 func (i *Itsy) handleResource(ctx Context, resource Resource) error {
 	switch ctx.Request().Method {
 	case http.MethodGet:
-		html := resource.Render()
+		html := resource.Render(ctx)
 		ctx.ResponseWriter().Write([]byte(html))
 	case http.MethodPost:
 		// logic for POST requests
@@ -138,10 +143,11 @@ func (i *Itsy) handleResource(ctx Context, resource Resource) error {
 	case http.MethodDelete:
 		// logic for DELETE requests
 	default:
-		// logic for unsupported methods 
+		// logic for unsupported methods
 	}
 	return nil
 }
+
 // Run starts the HTTP server.
 func (i *Itsy) Run(addr string) {
 	http.ListenAndServe(addr, i)

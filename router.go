@@ -1,6 +1,6 @@
 package itsy
 
-import "strings" 
+import "strings"
 
 type (
 	// router is the main router tree
@@ -13,9 +13,11 @@ type (
 	node struct {
 		handlers map[string]HandlerFunc // handlers is a map of handlers for each method
 		children map[string]*node       // children is a map of child nodes
+		param    string                 // param is the name of the parameter for parameterized routes
 	}
 )
 
+// newRouter creates a new router.
 func newRouter(itsy *Itsy) *router {
 	return &router{
 		index: &node{
@@ -26,6 +28,7 @@ func newRouter(itsy *Itsy) *router {
 	}
 }
 
+// addRoute adds a route to the router.
 func (r *router) addRoute(method, path string, handler HandlerFunc) {
 	segments := strings.FieldsFunc(path, func(r rune) bool { return r == '/' })
 	currentNode := r.index
@@ -38,6 +41,10 @@ func (r *router) addRoute(method, path string, handler HandlerFunc) {
 			newNode := &node{
 				handlers: make(map[string]HandlerFunc),
 				children: make(map[string]*node),
+			}
+			// If the segment starts with ":", it's a parameterized route
+			if strings.HasPrefix(segment, ":") {
+				newNode.param = segment[1:]
 			}
 			currentNode.children[segment] = newNode
 			currentNode = newNode
