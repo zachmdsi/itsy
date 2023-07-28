@@ -54,19 +54,21 @@ import (
   "itsy"
 )
 
-type HelloWorldResource struct {
-  kitsy.BaseResource
+type PostResource struct {
+  itsy.BaseResource
+  Title string
+  Body  string
 }
 
-func (h *HelloWorldResource) Render(ctx itsy.Context) string {
-  name := ctx.Params()["name"]
+func (p *PostResource) Render(ctx itsy.Context) string {
+  t := template.Must(template.New("post").Parse(`
+    <h1>{{.Title}}</h1>
+    <p>{{.Body}}</p>
+    <a href="/comments?post={{.Title}}">View Comments</a>
+  `))
 
-  // Create a new template and parse the letter into it.
-  t := template.Must(template.New("hello").Parse("<h1>Hello, {{.Name}}!</h1>"))
-
-  // Execute the template for each recipient.
   var rendered string
-  err := t.Execute(&rendered, map[string]string{"Name": name})
+  err := t.Execute(&rendered, map[string]string{"Title": p.Title, "Body": p.Body})
   if err != nil {
     panic(err)
   }
@@ -74,15 +76,23 @@ func (h *HelloWorldResource) Render(ctx itsy.Context) string {
   return rendered
 }
 
-type HomeResource struct {
+type CommentResource struct {
   itsy.BaseResource
+  Author string
+  Text   string
 }
 
-func (h *HomeResource) Render(ctx itsy.Context) string {
-  t := template.Must(template.New("home").Parse("<h1>Welcome to the Home Page!</h1>"))
+func (c *CommentResource) Render(ctx itsy.Context) string {
+  postTitle := ctx.Params()["post"]
+
+  t := template.Must(template.New("comment").Parse(`
+    <h3>Comment by {{.Author}}</h3>
+    <p>{{.Text}}</p>
+    <a href="/post/{{.PostTitle}}">Back to Post</a>
+  `))
 
   var rendered string
-  err := t.Execute(&rendered, nil)
+  err := t.Execute(&rendered, map[string]string{"Author": c.Author, "Text": c.Text, "PostTitle": postTitle})
   if err != nil {
     panic(err)
   }
@@ -94,23 +104,21 @@ func main() {
   // Create a new itsy instance.
   itsy := itsy.New()
 
-  // Add a resource.
-  helloResource := &HelloWorldResource{}
-  helloResource.AddLink(itsy.A("/home", "Home"))
-  itsy.Add(http.MethodGet, "/hello/:name", helloResource)
+  // Add a post resource.
+  postResource := &PostResource{Title: "My First Post", Body: "This is my first blog post."}
+  itsy.Add(http.MethodGet, "/post/:title", postResource)
 
-  // Add a home resource.
-  homeResource := &HomeResource{}
-  homeResource.AddLink(itsy.A("/hello/John", "Say Hello to John"))
-  itsy.Add(http.MethodGet, "/home", homeResource)
+  // Add a comment resource.
+  commentResource := &CommentResource{Author: "John Doe", Text: "Great post!"}
+  commentResource.AddLink(itsy.A("/post/My%20First%20Post", "Back to Post"))
+  itsy.Add(http.MethodGet, "/comments", commentResource)
 
   // Start the server.
   itsy.Run(":8080")
 }
-
 ```
 
-In this example, we have two resources: HelloWorldResource and HomeResource. The HelloWorldResource is parameterized to accept a name and returns a personalized greeting. It also includes a link back to the home page. The HomeResource includes a link to say hello to "John". This demonstrates how you can create interconnected resources with itsy.
+In this example, a GET request to /post/My%20First%20Post would return the blog post titled "My First Post", along with a link to view its comments. A GET request to /comments?post=My%20First%20Post would return a comment by "John Doe", along with a link back to the post it belongs to.
 
 ## Contributing
 

@@ -10,16 +10,16 @@ import (
 type (
 	// Resource is an interface that should be implemented by types that represent themselves as hypermedia resources.
 	Resource interface {
-		GetLinks() []Link                       // GetLinks returns a slice of links that describe the resource.
-		GetForms() []Form                       // GetForms returns a slice of forms that describe the resource.
-		GetEmbeds() []Embed                     // GetEmbeds returns a slice of embedded resources.
-		GetTemplates() []Template               // GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
-		GetActions() []Action                   // GetActions returns a slice of actions that can be invoked by the client.
+		GetLinks() []Link         // GetLinks returns a slice of links that describe the resource.
+		GetForms() []Form         // GetForms returns a slice of forms that describe the resource.
+		GetEmbeds() []Embed       // GetEmbeds returns a slice of embedded resources.
+		GetTemplates() []Template // GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
+		GetActions() []Action     // GetActions returns a slice of actions that can be invoked by the client.
 
-		AddLink(tag *Tag) error           // AddLink adds a link to the resource.
+		AddLink(tag *Tag) error // AddLink adds a link to the resource.
 
-		RenderBase(Context) string              // RenderBase renders the base context for the resource.
-		Render(Context) string                  // Render renders the resource.
+		RenderBase(Context) string // RenderBase renders the base context for the resource.
+		Render(Context) string     // Render renders the resource.
 	}
 	// Link represents link from one resource to another.
 	Link struct {
@@ -123,22 +123,22 @@ var resourceTemplate = template.Must(template.New("resource").Parse(`
 `))
 
 // GetLinks returns a slice of links that describe the resource.
-func (b *BaseResource) GetLinks() []Link         { return b.Links }
+func (b *BaseResource) GetLinks() []Link { return b.Links }
 
 // GetForms returns a slice of forms that describe the resource.
-func (b *BaseResource) GetForms() []Form         { return b.Forms }
+func (b *BaseResource) GetForms() []Form { return b.Forms }
 
 // GetEmbeds returns a slice of embedded resources.
-func (b *BaseResource) GetEmbeds() []Embed       { return b.Embeds }
+func (b *BaseResource) GetEmbeds() []Embed { return b.Embeds }
 
 // GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
 func (b *BaseResource) GetTemplates() []Template { return b.Templates }
 
 // GetActions returns a slice of actions that can be invoked by the client.
-func (b *BaseResource) GetActions() []Action     { return b.Actions }
+func (b *BaseResource) GetActions() []Action { return b.Actions }
 
 // Render is a no-op implementation of the Render method.
-func (b *BaseResource) Render(Context) string    { return "" }
+func (b *BaseResource) Render(Context) string { return "" }
 
 // AddLink adds a link to the resource.
 func (b *BaseResource) AddLink(tag *Tag) error {
@@ -189,20 +189,20 @@ func ParseLink(tag *Tag) (Link, error) {
 // A is a helper function for generating HTML anchor elements.
 func A(href string, text string, attrs ...Attr) *Tag {
 	// Create a new anchor element.
-    a := &Tag{
-        name: "a",
-        attrs: []Attr{
+	a := &Tag{
+		name: "a",
+		attrs: []Attr{
 			NewAttr("href", href),
 		},
 		text: text,
-    }
+	}
 
 	// Add the attributes to the anchor element.
 	for _, attr := range attrs {
 		a.Set(attr.Key, attr.Value)
 	}
 
-    return a
+	return a
 }
 
 // Data is a helper function for generating HTML data attributes.
@@ -218,7 +218,7 @@ func (b *BaseResource) RenderBase(Context) string {
 }
 
 // Set sets the value of an attribute.
-func (t* Tag) Set(key, val string) {
+func (t *Tag) Set(key, val string) {
 	t.attrs = append(t.attrs, NewAttr(key, val))
 }
 

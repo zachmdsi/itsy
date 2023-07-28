@@ -3,19 +3,19 @@ package itsy
 import "testing"
 
 func TestParseLink(t *testing.T) {
-    tag := A("/test/link", "Test Link", Attr{"rel", "test"}, Attr{"name", "test"}, Attr{"render", "test"}, Attr{"prompt", "Test 1"})
-    link, err := ParseLink(tag)
-    if err != nil {
-        t.Fatalf("ParseLink: %v", err)
-    }
+	tag := A("/test/link", "Test Link", Attr{"rel", "test"}, Attr{"name", "test"}, Attr{"render", "test"}, Attr{"prompt", "Test 1"})
+	link, err := ParseLink(tag)
+	if err != nil {
+		t.Fatalf("ParseLink: %v", err)
+	}
 
-    if link.Href != "/test/link" {
-        t.Errorf("got href %q, want %q", link.Href, "/test/link")
-    }
+	if link.Href != "/test/link" {
+		t.Errorf("got href %q, want %q", link.Href, "/test/link")
+	}
 
-    if link.Prompt != "Test Link" {
-        t.Errorf("got prompt %q, want %q", link.Prompt, "Test Link")
-    }
+	if link.Prompt != "Test Link" {
+		t.Errorf("got prompt %q, want %q", link.Prompt, "Test Link")
+	}
 }
 
 func TestAddLink(t *testing.T) {
