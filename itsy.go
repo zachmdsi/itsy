@@ -120,10 +120,11 @@ func (i *Itsy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// AddResource adds a resource to the Itsy instance.
-func (i *Itsy) AddResource(method, path string, resource Resource) {
-	// Add a "Self" link to the resource.
-	resource.AddLink(path, "Self")
+// Add adds a resource to the Itsy instance.
+func (i *Itsy) Add(method, path string, resource Resource) {
+	// Add a "self" link to the resource.
+	link := A(path, "Self")
+	resource.AddLink(link)
 
 	// Add resource to the resources map.
 	i.resources[path] = resource

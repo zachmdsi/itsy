@@ -33,7 +33,7 @@ func main() {
   itsy := itsy.New()
 
   // Add a resource.
-  itsy.AddResource(http.MethodGet, "/hello", &HelloWorldResource{})
+  itsy.Add(http.MethodGet, "/hello", &HelloWorldResource{})
 
   // Start the server.
   itsy.Run(":8080")
