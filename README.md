@@ -33,7 +33,7 @@ func main() {
   itsy := itsy.New()
 
   // Add a resource.
-  itsy.Add(http.MethodGet, "/hello", &HelloWorldResource{})
+  itsy.GET("/hello", &HelloWorldResource{})
 
   // Start the server.
   itsy.Run(":8080")
@@ -106,12 +106,12 @@ func main() {
 
   // Add a post resource.
   postResource := &PostResource{Title: "My First Post", Body: "This is my first blog post."}
-  itsy.Add(http.MethodGet, "/post/:title", postResource)
+  itsy.GET("/post/:title", postResource)
 
   // Add a comment resource.
   commentResource := &CommentResource{Author: "John Doe", Text: "Great post!"}
-  commentResource.AddLink(itsy.A("/post/My%20First%20Post", "Back to Post"))
-  itsy.Add(http.MethodGet, "/comments", commentResource)
+  commentResource.Link("/post/My%20First%20Post", "Back to Post")
+  itsy.GET("/comments", commentResource)
 
   // Start the server.
   itsy.Run(":8080")

@@ -18,7 +18,7 @@ func TestNew(t *testing.T) {
 func TestAdd(t *testing.T) {
 	itsy := New()
 	resource := &TestResource{}
-	itsy.Add(http.MethodGet, "/test", resource)
+	itsy.GET("/test", resource)
 	if _, ok := itsy.resources["/test"]; !ok {
 		t.Errorf("resource not added")
 	}
@@ -28,7 +28,7 @@ func TestAdd(t *testing.T) {
 func TestHandleResource(t *testing.T) {
 	itsy := New()
 	resource := &TestResource{}
-	itsy.Add(http.MethodGet, "/test", resource)
+	itsy.GET("/test", resource)
 	server := httptest.NewServer(itsy)
 	defer server.Close()
 	resp, err := http.Get(server.URL + "/test")

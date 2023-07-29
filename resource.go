@@ -16,7 +16,7 @@ type (
 		GetTemplates() []Template // GetTemplates returns a slice of URL templates that can be used to construct URLs to related resources.
 		GetActions() []Action     // GetActions returns a slice of actions that can be performed on the resource.
 
-		AddLink(tag *Tag) error // AddLink adds a link to the resource.
+		Link(href, prompt string, attrs ...Attr) error // AddLink adds a link to the resource.
 
 		RenderBase(Context) string // RenderBase renders the base structure of the resource.
 		Render(Context) string     // Render renders the specific representation of the resource.
@@ -25,7 +25,7 @@ type (
 	Link struct {
 		Rel    string // Rel describes the relationship between the current resource and the linked resource.
 		Href   string // Href is the URL of the linked resource.
-		Prompt string // Prompt provides a human-readable description of the link.
+		Prompt string // Prompt is the text inside the anchor element.
 		Name   string // Name is a secondary identifier for the link.
 		Render string // Render provides a hint on how the linked resource should be rendered.
 	}
@@ -141,7 +141,10 @@ func (b *BaseResource) GetActions() []Action { return b.Actions }
 func (b *BaseResource) Render(Context) string { return "" }
 
 // AddLink adds a link to the resource.
-func (b *BaseResource) AddLink(tag *Tag) error {
+func (b *BaseResource) Link(href, prompt string, attrs ...Attr) error {
+	// Create a new anchor element.
+	tag := A(href, prompt, attrs...)
+
 	// Parse the link from the tag.
 	link, err := ParseLink(tag)
 	if err != nil {
@@ -198,7 +201,7 @@ func A(href string, prompt string, attrs ...Attr) *Tag {
 
 	// Add the attributes to the anchor element.
 	for _, attr := range attrs {
-		a.Set(attr.Key, attr.Value)
+		a.SetAttr(attr.Key, attr.Value)
 	}
 
 	return a
@@ -216,8 +219,8 @@ func (b *BaseResource) RenderBase(Context) string {
 	return buf.String()
 }
 
-// Set sets the value of an attribute.
-func (t *Tag) Set(key, val string) {
+// SetAttr sets the value of an attribute.
+func (t *Tag) SetAttr(key, val string) {
 	t.attrs = append(t.attrs, NewAttr(key, val))
 }
 

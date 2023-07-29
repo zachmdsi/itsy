@@ -22,11 +22,8 @@ func TestAddLink(t *testing.T) {
 	// Create a new BaseResource.
 	resource := &BaseResource{}
 
-	// Create a new Tag.
-	tag := A("/test/link", "Test Link", Data("rel", "test"), Data("name", "test"), Data("render", "test"), Data("prompt", "Test 1"))
-
 	// Add the link to the resource.
-	err := resource.AddLink(tag)
+	err := resource.Link("/test/link", "Test Link", Data("rel", "test"), Data("name", "test"), Data("render", "test"), Data("prompt", "Test 1"))
 	if err != nil {
 		t.Fatalf("AddLink: %v", err)
 	}
