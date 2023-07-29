@@ -17,9 +17,12 @@ type (
 		GetActions() []Action     // GetActions returns a slice of actions that can be performed on the resource.
 
 		Link(href, prompt string, attrs ...Attr) error // AddLink adds a link to the resource.
+		Form(form Form)                                // AddForm adds a form to the resource.
 
 		RenderBase(Context) string // RenderBase renders the base structure of the resource.
 		Render(Context) string     // Render renders the specific representation of the resource.
+
+		GetHandler() HandlerFunc // GetHandler returns a handler function for the resource.
 	}
 	// Link represents a hyperlink from the current resource to a related resource.
 	Link struct {
@@ -140,7 +143,13 @@ func (b *BaseResource) GetActions() []Action { return b.Actions }
 // Render is a no-op implementation of the Render method.
 func (b *BaseResource) Render(Context) string { return "" }
 
-// AddLink adds a link to the resource.
+// GetHandler is a no-op implementation of the GetHandler method
+func (b *BaseResource) GetHandler() HandlerFunc { return nil }
+
+// Form adds a form to the resource.
+func (b *BaseResource) Form(form Form) { b.Forms = append(b.Forms, form) }
+
+// Link adds a link to the resource.
 func (b *BaseResource) Link(href, prompt string, attrs ...Attr) error {
 	// Create a new anchor element.
 	tag := A(href, prompt, attrs...)
@@ -245,5 +254,23 @@ func NewAttr(key, val string) Attr {
 	return Attr{
 		Key:   key,
 		Value: val,
+	}
+}
+
+// NewForm creates a new form.
+func NewForm(name, href, method string, fields ...FormField) Form {
+	return Form{
+		Name:   name,
+		Href:   href,
+		Method: method,
+		Fields: fields,
+	}
+}
+
+// NewFormField creates a new form field.
+func NewFormField(name, value string) FormField {
+	return FormField{
+		Name:  name,
+		Value: value,
 	}
 }

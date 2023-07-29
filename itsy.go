@@ -148,6 +148,12 @@ func (i *Itsy) handleResource(ctx Context, resource Resource) error {
 
 	switch ctx.Request().Method {
 	case http.MethodGet:
+		handler := resource.GetHandler()
+		if handler != nil {
+			return handler(ctx)
+		}
+
+		// Default behavior for GET requests is to render the resource.
 		baseHtml := resource.RenderBase(ctx)
 		html := resource.Render(ctx)
 
