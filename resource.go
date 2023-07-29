@@ -8,57 +8,57 @@ import (
 )
 
 type (
-	// Resource is an interface that should be implemented by types that represent themselves as hypermedia resources.
+	// Resource is an interface that represents a hypermedia resource. It provides methods for retrieving and adding hypermedia controls.
 	Resource interface {
-		GetLinks() []Link         // GetLinks returns a slice of links that describe the resource.
-		GetForms() []Form         // GetForms returns a slice of forms that describe the resource.
-		GetEmbeds() []Embed       // GetEmbeds returns a slice of embedded resources.
-		GetTemplates() []Template // GetTemplates returns a slice of URL templates that clients can use to construct URLs to resources.
-		GetActions() []Action     // GetActions returns a slice of actions that can be invoked by the client.
+		GetLinks() []Link         // GetLinks returns a slice of links associated with the resource.
+		GetForms() []Form         // GetForms returns a slice of forms that can be used to interact with the resource.
+		GetEmbeds() []Embed       // GetEmbeds returns a slice of resources embedded within the current resource.
+		GetTemplates() []Template // GetTemplates returns a slice of URL templates that can be used to construct URLs to related resources.
+		GetActions() []Action     // GetActions returns a slice of actions that can be performed on the resource.
 
 		AddLink(tag *Tag) error // AddLink adds a link to the resource.
 
-		RenderBase(Context) string // RenderBase renders the base context for the resource.
-		Render(Context) string     // Render renders the resource.
+		RenderBase(Context) string // RenderBase renders the base structure of the resource.
+		Render(Context) string     // Render renders the specific representation of the resource.
 	}
-	// Link represents link from one resource to another.
+	// Link represents a hyperlink from the current resource to a related resource.
 	Link struct {
-		Rel    string // Rel identifies the relationship between the linked resource and the current context.
-		Href   string // Href holds the URL of the linked resource.
-		Prompt string // Prompt is a human-readable description of the link.
-		Name   string // Name can be used as a secondary key for selecting link elements.
-		Render string // Render hints how the linked resource should be rendered in a given media type.
+		Rel    string // Rel describes the relationship between the current resource and the linked resource.
+		Href   string // Href is the URL of the linked resource.
+		Prompt string // Prompt provides a human-readable description of the link.
+		Name   string // Name is a secondary identifier for the link.
+		Render string // Render provides a hint on how the linked resource should be rendered.
 	}
-	// Form represents an HTML form with fields for parameters and an action URL.
+	// Form represents a form that can be used to submit data to the server.
 	Form struct {
-		Name   string      // Name serves as the form's identifier.
-		Href   string      // Href holds the URL where the form data will be sent upon submission.
-		Method string      // Method defines the HTTP method used to submit the form.
-		Type   string      // Type specifies how the form-data should be encoded when submitting it to the server.
-		Fields []FormField // Fields is a slice of all the input fields in the forms.
+		Name   string      // Name is the identifier of the form.
+		Href   string      // Href is the URL where the form data should be submitted.
+		Method string      // Method is the HTTP method used to submit the form.
+		Type   string      // Type specifies the media type of the form submission.
+		Fields []FormField // Fields is a slice of the input fields in the form.
 	}
-	// FormField represents a field in an HTML form.
+	// FormField represents an input field in a form.
 	FormField struct {
 		Name  string // Name is the name of the input field.
 		Value string // Value is the default value of the input field.
 	}
-	// Embed represents a resource that is embedded within another resource.
+	// Embed represents a resource that is embedded within the current resource.
 	Embed struct {
-		Rel      string   // Rel describes the relationship of the embedded resource to the parent resource.
+		Rel      string   // Rel describes the relationship between the current resource and the embedded resource.
 		Resource Resource // Resource is the embedded resource.
 	}
-	// Template represents a URL template that clients can use to construct URLs to resources.
+	// Template represents a URL template that can be used to construct URLs to related resources.
 	Template struct {
-		Name string // Name serves as the template's identifier.
-		Href string // Href holds the URL template string.
+		Name string // Name is the identifier of the template.
+		Href string // Href is the URL template string.
 	}
-	// Action represents the server-side operation that can be invoked by the client.
+	// Action represents an operation that can be performed on the resource.
 	Action struct {
-		Name   string      // Name serves as the action's identifier.
-		Href   string      // Href is the URL where the request will be sent upon invocation.
-		Method string      // Method defines the HTTP method used to submit the form.
-		Type   string      // Type specifies how the action data should be encoded when submitting it to the server.
-		Fields []FormField // Fields is a slice of all the input fields in the action.
+		Name   string      // Name is the identifier of the action.
+		Href   string      // Href is the URL where the action request should be sent.
+		Method string      // Method is the HTTP method used to perform the action.
+		Type   string      // Type specifies the media type of the action request.
+		Fields []FormField // Fields is a slice of the input fields for the action.
 	}
 	// Tag represents an HTML tag.
 	Tag struct {
@@ -66,12 +66,12 @@ type (
 		attrs []Attr
 		text  string
 	}
-	// Attr represents an HTML attribute.
+	// Attr represents an attribute of an HTML tag.
 	Attr struct {
 		Key   string
 		Value string
 	}
-	// BaseResource is a base implementation of the Resource interface.
+	// BaseResource provides a base implementation of the Resource interface, which can be embedded in other structs to provide default behavior.
 	BaseResource struct {
 		Links     []Link
 		Forms     []Form
@@ -162,7 +162,9 @@ func ParseLink(tag *Tag) (Link, error) {
 	}
 
 	// Create a new Link.
-	link := Link{}
+	link := Link{
+		Prompt: tag.text,
+	}
 
 	// Parse the tag's attributes.
 	for _, attr := range tag.attrs {
@@ -175,26 +177,23 @@ func ParseLink(tag *Tag) (Link, error) {
 			link.Name = attr.Value
 		case "render":
 			link.Render = attr.Value
-		case "prompt":
-			link.Prompt = attr.Value
+		default:
+			// Ignore unknown attributes.
 		}
 	}
-
-	// Set the link's prompt to the tag's text.
-	link.Prompt = tag.text
 
 	return link, nil
 }
 
 // A is a helper function for generating HTML anchor elements.
-func A(href string, text string, attrs ...Attr) *Tag {
+func A(href string, prompt string, attrs ...Attr) *Tag {
 	// Create a new anchor element.
 	a := &Tag{
 		name: "a",
 		attrs: []Attr{
 			NewAttr("href", href),
 		},
-		text: text,
+		text: prompt,
 	}
 
 	// Add the attributes to the anchor element.

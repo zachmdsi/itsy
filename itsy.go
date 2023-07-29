@@ -123,8 +123,7 @@ func (i *Itsy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // Add adds a resource to the Itsy instance.
 func (i *Itsy) Add(method, path string, resource Resource) {
 	// Add a "self" link to the resource.
-	link := A(path, "Self")
-	resource.AddLink(link)
+	resource.AddLink(A(path, "Self"))
 
 	// Add resource to the resources map.
 	i.resources[path] = resource
@@ -132,7 +131,7 @@ func (i *Itsy) Add(method, path string, resource Resource) {
 	handler := func(ctx Context) error {
 		return i.handleResource(ctx, resource)
 	}
-	i.router.addRoute(http.MethodGet, path, handler)
+	i.router.addRoute(method, path, handler)
 }
 
 // handleResource handles a resource based on the HTTP method.
@@ -144,7 +143,6 @@ func (i *Itsy) handleResource(ctx Context, resource Resource) error {
 		baseHtml := resource.RenderBase(ctx)
 		html := resource.Render(ctx)
 
-		// Set the Content-Type header to indicate that the response is HTML.
 		w.Header().Set("Content-Type", "text/html")
 
 		// Set the Link header to include links to other resources.
