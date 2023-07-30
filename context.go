@@ -30,6 +30,8 @@ func (c *baseContext) Logger() *zap.Logger                 { return c.logger }
 func (c *baseContext) ResponseWriter() http.ResponseWriter { return c.responseWriter }
 func (c *baseContext) Params() map[string]string           { return c.params }
 func (c *baseContext) SetParam(name, value string)         { c.params[name] = value }
+func (c *baseContext) FormValue(key string) string         { return c.formValues[key] }
+func (c *baseContext) SetFormValue(key, value string)      { c.formValues[key] = value }
 
 func (c *baseContext) ParseForm() error {
 	// Parse the form data.
