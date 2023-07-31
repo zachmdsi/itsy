@@ -1,54 +1,87 @@
 package itsy
 
-import "strings"
-
-type (
-	// router is the main router tree
-	router struct {
-		index *node // index is the root node of the router tree
-		itsy  *Itsy // itsy is the main framework instance
-	}
-
-	// node is a node in the router tree
-	node struct {
-		handlers map[string]HandlerFunc // handlers is a map of handlers for each method
-		children map[string]*node       // children is a map of child nodes
-		param    string                 // param is the name of the parameter for parameterized routes
-	}
+import (
+	"strings"
 )
 
-// newRouter creates a new router.
-func newRouter(itsy *Itsy) *router {
+type (
+	// router is the main router instance.
+	router struct {
+		index *node // The root node of the router.
+		itsy  *Itsy // The main framework instance.
+	}
+	// node is a node in the router.
+	node struct {
+		path     string           // The path of the node.
+		children map[string]*node // The child nodes of the node.
+		resource Resource         // The resource of the node.
+		param    string           // The name of the parameter, if the node is a parameter node.
+	}
+	// HandlerFunc is a function that handles a request.
+	HandlerFunc func(Context)
+)
+
+// newRouter creates a new router instance.
+func newRouter(i *Itsy) *router {
 	return &router{
 		index: &node{
-			handlers: make(map[string]HandlerFunc),
 			children: make(map[string]*node),
+			resource: nil,
 		},
-		itsy: itsy,
+		itsy: i,
 	}
 }
 
 // addRoute adds a route to the router.
-func (r *router) addRoute(method, path string, handler HandlerFunc) {
-	segments := strings.FieldsFunc(path, func(r rune) bool { return r == '/' })
-	currentNode := r.index
+func (r *router) addRoute(path string, resource Resource) {
+	// Split the router into segments
+	segments := splitPath(path)
+
+	// Start at the root node
+	n := r.index
+
+	// For each segment in the path
 	for _, segment := range segments {
-		// If a direct match is found, move to the next node
-		if child, ok := currentNode.children[segment]; ok {
-			currentNode = child
-		} else {
-			// If no direct match is found, create a new node
-			newNode := &node{
-				handlers: make(map[string]HandlerFunc),
-				children: make(map[string]*node),
+		// If the segment is not empty
+		if segment != "" {
+			// If the segment starts with a colon, it's a parameter.
+			isParam := strings.HasPrefix(segment, ":")
+
+			if isParam {
+				// Store the parameter name wihout the colon.
+				paramName := segment[1:]
+
+				// If the child node for parameters doesn't exist, create it.
+				if _, ok := n.children[":"]; !ok {
+					n.children[":"] = &node{
+						path:     segment,
+						children: make(map[string]*node),
+						param:    paramName,
+					}
+				}
+
+				// Move to the child node for parameters.
+				n = n.children[":"]
+			} else {
+				// If the child node does not exist, create it.
+				if _, ok := n.children[segment]; !ok {
+					n.children[segment] = &node{
+						path:     segment,
+						children: make(map[string]*node),
+					}
+				}
+
+				// Move to the child node
+				n = n.children[segment]
 			}
-			// If the segment starts with ":", it's a parameterized route
-			if strings.HasPrefix(segment, ":") {
-				newNode.param = segment[1:]
-			}
-			currentNode.children[segment] = newNode
-			currentNode = newNode
 		}
 	}
-	currentNode.handlers[method] = handler
+
+	// Set the resource of the node
+	n.resource = resource
+}
+
+// splitPath splits a path into segments.
+func splitPath(path string) []string {
+	return strings.FieldsFunc(path, func(r rune) bool { return r == '/' })
 }
