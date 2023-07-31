@@ -33,7 +33,7 @@ func main() {
   itsy := itsy.New()
 
   // Add a resource.
-  itsy.GET("/hello", &HelloWorldResource{})
+  itsy.Register("/hello", &HelloWorldResource{})
 
   // Start the server.
   itsy.Run(":8080")
@@ -41,84 +41,7 @@ func main() {
 
 ```
 
-In this example, we define a simple resource that returns a "Hello, world!" message when accessed with a GET request. We then add this resource to our itsy application and start the server.
-
-## Advanced Example
-
-```go
-package main
-
-import (
-  "html/template"
-  "net/http"
-  "itsy"
-)
-
-type PostResource struct {
-  itsy.BaseResource
-  Title string
-  Body  string
-}
-
-func (p *PostResource) Render(ctx itsy.Context) string {
-  t := template.Must(template.New("post").Parse(`
-    <h1>{{.Title}}</h1>
-    <p>{{.Body}}</p>
-    <a href="/comments?post={{.Title}}">View Comments</a>
-  `))
-
-  var rendered string
-  err := t.Execute(&rendered, map[string]string{"Title": p.Title, "Body": p.Body})
-  if err != nil {
-    panic(err)
-  }
-
-  return rendered
-}
-
-type CommentResource struct {
-  itsy.BaseResource
-  Author string
-  Text   string
-}
-
-func (c *CommentResource) Render(ctx itsy.Context) string {
-  postTitle := ctx.Params()["post"]
-
-  t := template.Must(template.New("comment").Parse(`
-    <h3>Comment by {{.Author}}</h3>
-    <p>{{.Text}}</p>
-    <a href="/post/{{.PostTitle}}">Back to Post</a>
-  `))
-
-  var rendered string
-  err := t.Execute(&rendered, map[string]string{"Author": c.Author, "Text": c.Text, "PostTitle": postTitle})
-  if err != nil {
-    panic(err)
-  }
-
-  return rendered
-}
-
-func main() {
-  // Create a new itsy instance.
-  itsy := itsy.New()
-
-  // Add a post resource.
-  postResource := &PostResource{Title: "My First Post", Body: "This is my first blog post."}
-  itsy.GET("/post/:title", postResource)
-
-  // Add a comment resource.
-  commentResource := &CommentResource{Author: "John Doe", Text: "Great post!"}
-  commentResource.Link("/post/My%20First%20Post", "Back to Post")
-  itsy.GET("/comments", commentResource)
-
-  // Start the server.
-  itsy.Run(":8080")
-}
-```
-
-In this example, a GET request to /post/My%20First%20Post would return the blog post titled "My First Post", along with a link to view its comments. A GET request to /comments?post=My%20First%20Post would return a comment by "John Doe", along with a link back to the post it belongs to.
+In this example, we define a simple resource that returns a "Hello, world!" message when accessed. We then add this resource to our itsy application and start the server.
 
 ## Contributing
 
