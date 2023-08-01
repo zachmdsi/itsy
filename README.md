@@ -24,19 +24,19 @@ type HelloWorldResource struct {
   itsy.BaseResource
 }
 
-func (h *HelloWorldResource) Render() string {
-  return "<h1>Hello, world!</h1>"
-}
-
 func main() {
   // Create a new itsy instance.
   itsy := itsy.New()
 
   // Add a resource.
-  itsy.Register("/hello", &HelloWorldResource{})
+  r := itsy.Register("/hello", &HelloWorldResource{})
+
+  r.GET(func(c Context) {
+    c.Response().Write([]byte("Hello, world!"))
+  })
 
   // Start the server.
-  itsy.Run(":8080")
+  itsy.Run()
 }
 
 ```
