@@ -12,10 +12,10 @@ type (
 	}
 	// node is a node in the router.
 	node struct {
-		path     string           // The path of the node.
-		children map[string]*node // The child nodes of the node.
-		resource Resource         // The resource of the node.
-		param    string           // The name of the parameter, if the node is a parameter node.
+		path     string                 // The path of the node.
+		children map[string]*node       // The child nodes of the node.
+		resource Resource               // The resource of the node.
+		param    string                 // The name of the parameter, if the node is a parameter node.
 	}
 	// HandlerFunc is a function that handles a request.
 	HandlerFunc func(Context)
@@ -26,7 +26,6 @@ func newRouter(i *Itsy) *router {
 	return &router{
 		index: &node{
 			children: make(map[string]*node),
-			resource: nil,
 		},
 		itsy: i,
 	}
@@ -44,41 +43,30 @@ func (r *router) addRoute(path string, resource Resource) {
 	for _, segment := range segments {
 		// If the segment is not empty
 		if segment != "" {
-			// If the segment starts with a colon, it's a parameter.
-			isParam := strings.HasPrefix(segment, ":")
-
-			if isParam {
-				// Store the parameter name wihout the colon.
-				paramName := segment[1:]
-
-				// If the child node for parameters doesn't exist, create it.
-				if _, ok := n.children[":"]; !ok {
-					n.children[":"] = &node{
-						path:     segment,
-						children: make(map[string]*node),
-						param:    paramName,
-					}
+			// If a direct match is found, move to the next node
+			if child, ok := n.children[segment]; ok {
+				n = child
+			} else { // If no direct match is found, create a new node
+				// Create a new node
+				node := &node{
+					path: segment,
+					children: make(map[string]*node),
+					resource: resource,
 				}
 
-				// Move to the child node for parameters.
-				n = n.children[":"]
-			} else {
-				// If the child node does not exist, create it.
-				if _, ok := n.children[segment]; !ok {
-					n.children[segment] = &node{
-						path:     segment,
-						children: make(map[string]*node),
-					}
+				// If the segments starts with ":", it's a parameterized route
+				if strings.HasPrefix(segment, ":") {
+					node.param = segment[1:]
 				}
 
-				// Move to the child node
-				n = n.children[segment]
+				// Add the node to the parent node
+				n.children[segment] = node
+
+				// Move to the new node
+				n = node
 			}
 		}
 	}
-
-	// Set the resource of the node
-	n.resource = resource
 }
 
 // splitPath splits a path into segments.
