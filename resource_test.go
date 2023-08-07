@@ -85,7 +85,6 @@ func TestMultipleResourceLinking(t *testing.T) {
 	rr := httptest.NewRecorder()
 	itsy.ServeHTTP(rr, req)
 
-
 	// Check if the links to all linked resources are correctly rendered in the response
 	for i, linkedResource := range linkedResources {
 		expectedLink := "<a href=\"" + linkedResource.Path() + "\">related" + strconv.Itoa(i+1) + "</a>"

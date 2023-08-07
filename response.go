@@ -17,8 +17,8 @@ type (
 // NewResponse creates a new response instance.
 func NewResponse(res http.ResponseWriter, i *Itsy) *Response {
 	return &Response{
-		Writer: res,
-		itsy:   i,
+		Writer:     res,
+		itsy:       i,
 		StatusCode: -1,
 	}
 }

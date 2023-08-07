@@ -8,7 +8,7 @@ type (
 		Request() *http.Request      // The HTTP request.
 		Response() *Response         // The HTTP response.
 		Resource() Resource          // The resource.
-		SetResource(res Resource) 	 // Set the resource.
+		SetResource(res Resource)    // Set the resource.
 		SetParam(name, value string) // Set a parameter.
 		GetParam(name string) string // Get a parameter.
 		Params() map[string]string   // The parameters.
