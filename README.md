@@ -32,12 +32,12 @@ func main() {
   r := itsy.Register("/hello", &HelloWorldResource{})
 
   // Add a GET handler to the resource.
-  r.GET(func(c Context) {
-    c.Response().Write([]byte("Hello, world!"))
+  r.GET(func(c Context) error {
+    return c.Response().WriteString("Hello, world")
   })
 
   // Start the server.
-  itsy.Run()
+  itsy.Run(":8080")
 }
 
 ```

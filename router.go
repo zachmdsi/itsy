@@ -12,13 +12,11 @@ type (
 	}
 	// node is a node in the router.
 	node struct {
-		path     string                 // The path of the node.
-		children map[string]*node       // The child nodes of the node.
-		resource Resource               // The resource of the node.
-		param    string                 // The name of the parameter, if the node is a parameter node.
+		path     string           // The path of the node.
+		children map[string]*node // The child nodes of the node.
+		resource Resource         // The resource of the node.
+		param    string           // The name of the parameter, if the node is a parameter node.
 	}
-	// HandlerFunc is a function that handles a request.
-	HandlerFunc func(Context)
 )
 
 // newRouter creates a new router instance.
@@ -33,23 +31,21 @@ func newRouter(i *Itsy) *router {
 
 // addRoute adds a route to the router.
 func (r *router) addRoute(path string, resource Resource) {
-	// Split the router into segments
+	if path == "/" {
+		r.index.resource = resource
+		return
+	}
 	segments := splitPath(path)
-
-	// Start at the root node
 	n := r.index
 
-	// For each segment in the path
 	for _, segment := range segments {
-		// If the segment is not empty
 		if segment != "" {
 			// If a direct match is found, move to the next node
 			if child, ok := n.children[segment]; ok {
 				n = child
 			} else { // If no direct match is found, create a new node
-				// Create a new node
 				node := &node{
-					path: segment,
+					path:     segment,
 					children: make(map[string]*node),
 					resource: resource,
 				}
