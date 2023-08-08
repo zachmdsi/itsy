@@ -1,7 +1,6 @@
 package itsy
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -49,70 +48,61 @@ func (res *responseWriterWrapper) WriteHeader(code int) {
 	res.original.WriteHeader(code)
 }
 
-// HypermediaMiddlware is a middleware that processes a handler and adds hypermedia controls to the response.
+// HypermediaMiddleware is a middleware that processes a handler and adds hypermedia controls to the response.
 func HypermediaMiddleware(next HandlerFunc) HandlerFunc {
 	return func(c Context) error {
-		originalWriter, buffer, err := prepareResponse(c)
+		originalWriter := c.Response().Writer
+		if originalWriter == nil {
+			return errors.New("Response writer is nil")
+		}
+
+		wrapper := &responseWriterWrapper{writer: originalWriter, original: originalWriter}
+		c.Response().Writer = wrapper
+
+		// Write the initial HTML to the response.
+		wrapper.Write([]byte("<html><body>"))
+
+		// Process the handler.
+		err := next(c)
 		if err != nil {
+			c.Itsy().Logger.Error("Handler Error", zap.Error(err))
+			c.Response().Writer.WriteHeader(StatusInternalServerError)
 			return err
 		}
 
-		if err := processHandler(c, next, buffer); err != nil {
+		// Write the hypermedia controls to the response.
+		if err := writeHypermediaControls(c, wrapper); err != nil {
 			return err
 		}
 
-		if err := writeHypermediaControls(c, buffer); err != nil {
-			return err
-		}
+		// Write the final HTML to the response.
+		wrapper.Write([]byte("</body></html>"))
+		wrapper.statusCode = StatusOK
 
-		return finalizeResponse(c, originalWriter, buffer)
+		c.Itsy().Logger.Info("Response", zap.Int("status", wrapper.statusCode))
+		return nil
 	}
-}
-
-// prepareResponse writes the initial HTML to the response.
-func prepareResponse(c Context) (http.ResponseWriter, *bytes.Buffer, error) {
-	originalWriter := c.Response().Writer
-	if originalWriter == nil {
-		return nil, nil, errors.New("Response writer is nil")
-	}
-
-	buffer := new(bytes.Buffer)
-	wrapper := &responseWriterWrapper{writer: buffer, original: originalWriter}
-	c.Response().Writer = wrapper
-	buffer.Write([]byte("<html><body>"))
-	return originalWriter, buffer, nil
-}
-
-// processHandler processes the next handler in the chain. 
-func processHandler(c Context, next HandlerFunc, buffer *bytes.Buffer) error {
-	err := next(c)
-	if err != nil {
-		c.Itsy().Logger.Error("Handler Error", zap.Error(err))
-		c.Response().Writer.WriteHeader(StatusInternalServerError)
-		return err
-	}
-	return nil
 }
 
 // writeHypermediaControls writes the hypermedia controls to the response.
-func writeHypermediaControls(c Context, buffer *bytes.Buffer) error {
+func writeHypermediaControls(c Context, writer io.Writer) error {
 	if resource := c.Resource(); resource != nil {
 		hypermedia := resource.Hypermedia()
 		if hypermedia != nil && len(hypermedia.Controls) > 0 {
-			buffer.Write([]byte("<div>Links:"))
+			writer.Write([]byte("<div>Links:"))
 			for _, control := range hypermedia.Controls {
-				if err := writeLink(c, control, buffer); err != nil {
+				if err := writeLink(c, control, writer); err != nil {
 					return err
 				}
 			}
-			buffer.Write([]byte("</div>"))
+			writer.Write([]byte("</div>"))
 		}
 	}
 	return nil
 }
 
 // writeLink writes a link to the response.
-func writeLink(c Context, control HypermediaControl, buffer *bytes.Buffer) error {
+func writeLink(c Context, control HypermediaControl, writer io.Writer) error {
 	if link, ok := control.(*Link); ok {
 		if params := c.Resource().GetParams(); params != nil {
 			for param, value := range params {
@@ -120,25 +110,7 @@ func writeLink(c Context, control HypermediaControl, buffer *bytes.Buffer) error
 				link.Href = strings.Replace(link.Href, placeholder, value, -1)
 			}
 		}
-		buffer.Write([]byte(fmt.Sprintf("<a href=\"%s\">%s</a>", link.Href, link.Rel)))
+		writer.Write([]byte(fmt.Sprintf("<a href=\"%s\">%s</a>", link.Href, link.Rel)))
 	}
-	return nil
-}
-
-// finalizeResponse writes the final HTML to the response.
-func finalizeResponse(c Context, originalWriter http.ResponseWriter, buffer *bytes.Buffer) error {
-	buffer.Write([]byte("</body></html>"))
-	_, err := originalWriter.Write(buffer.Bytes())
-	if err != nil {
-		c.Itsy().Logger.Error("Original Writer Error", zap.Error(err))
-		c.Response().Writer.WriteHeader(StatusInternalServerError)
-		return err
-	}
-
-	wrapper, ok := c.Response().Writer.(*responseWriterWrapper)
-	if ok {
-		wrapper.statusCode = StatusOK
-	}
-	c.Itsy().Logger.Info("Response", zap.Int("status", wrapper.statusCode))
 	return nil
 }

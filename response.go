@@ -51,7 +51,7 @@ func (r *Response) WriteString(s string) error {
 	}
 
 	if written != len(s) {
-		HTTPError(StatusInternalServerError, "Response length mismatch", r.Writer, r.itsy.Logger)
+		r.itsy.sendHTTPError(StatusInternalServerError, "Response length mismatch", r.Writer, r.itsy.Logger)
 		return errors.New("Response length mismatch")
 	}
 

@@ -1,6 +1,7 @@
 package itsy
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -12,10 +13,11 @@ type (
 	}
 	// node is a node in the router.
 	node struct {
-		path     string           // The path of the node.
-		children map[string]*node // The child nodes of the node.
-		resource Resource         // The resource of the node.
-		param    string           // The name of the parameter, if the node is a parameter node.
+		path     string         // The path of the node.
+		regex    *regexp.Regexp // The regex of the segment, if it's a parameterized route.
+		children []*node        // The child nodes of the node.
+		resource Resource       // The resource of the node.
+		param    string         // The name of the parameter, if the node is a parameter node.
 	}
 )
 
@@ -23,7 +25,7 @@ type (
 func newRouter(i *Itsy) *router {
 	return &router{
 		index: &node{
-			children: make(map[string]*node),
+			children: make([]*node, 0),
 		},
 		itsy: i,
 	}
@@ -31,35 +33,44 @@ func newRouter(i *Itsy) *router {
 
 // addRoute adds a route to the router.
 func (r *router) addRoute(path string, resource Resource) {
-	if path == "/" {
+	segments := splitPath(path)
+
+	if len(segments) == 0 {
 		r.index.resource = resource
 		return
 	}
-	segments := splitPath(path)
-	n := r.index
+
+	currentNode := r.index
 
 	for _, segment := range segments {
 		if segment != "" {
-			// If a direct match is found, move to the next node
-			if child, ok := n.children[segment]; ok {
-				n = child
-			} else { // If no direct match is found, create a new node
-				node := &node{
+			found := false
+			for _, child := range currentNode.children {
+				if child.path == segment || (child.regex != nil && child.regex.MatchString(segment)) {
+					currentNode = child
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				newNode := &node{
 					path:     segment,
-					children: make(map[string]*node),
+					children: make([]*node, 0),
 					resource: resource,
 				}
 
 				// If the segments starts with ":", it's a parameterized route
 				if strings.HasPrefix(segment, ":") {
-					node.param = segment[1:]
+					newNode.param = segment[1:]
+					newNode.regex = regexp.MustCompile("^[a-zA-Z0-9_]+$") // Compile regex for the parameter
 				}
 
 				// Add the node to the parent node
-				n.children[segment] = node
+				currentNode.children = append(currentNode.children, newNode)
 
 				// Move to the new node
-				n = node
+				currentNode = newNode
 			}
 		}
 	}

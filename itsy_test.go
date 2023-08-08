@@ -83,32 +83,6 @@ func TestGETWithParams(t *testing.T) {
 	}
 }
 
-func TestHTTPErrorFunction(t *testing.T) {
-	i := New()
-
-	// Create a test server.
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		HTTPError(http.StatusNotFound, "Not Found", w, i.Logger)
-	}))
-	defer server.Close()
-
-	resp, err := http.Get(server.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := "Not Found: Not Found"
-	if string(body) != expected {
-		t.Errorf("Expected %q, got %q", expected, string(body))
-	}
-}
-
 func TestResourceDoesNotExist(t *testing.T) {
 	i := New()
 

@@ -74,8 +74,8 @@ func setupLogger() *zap.Logger {
 	return logger
 }
 
-// HTTPError writes an error message to the response given a status code
-func HTTPError(statusCode int, message string, res http.ResponseWriter, logger *zap.Logger) {
+// sendHTTPError writes an error message to the response given a status code
+func (i *Itsy) sendHTTPError(statusCode int, message string, res http.ResponseWriter, logger *zap.Logger) {
 	statusText, ok := httpErrors[statusCode]
 	if !ok {
 		statusText = httpErrors[StatusInternalServerError]
@@ -102,7 +102,6 @@ func New() *Itsy {
 func (i *Itsy) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
 	c := i.prepareRequestContext(res, req, path)
-	i.Logger.Info("Request", zap.String("method", req.Method), zap.String("path", path))
 
 	n := i.processRouteSegments(c, path)
 	if n == nil {
@@ -125,54 +124,53 @@ func (i *Itsy) prepareRequestContext(res http.ResponseWriter, req *http.Request,
 // processRouteSegments processes the route segments of the request path.
 func (i *Itsy) processRouteSegments(c Context, path string) *node {
 	segments := splitPath(path)
-	n := i.router.index
+	currentNode := i.router.index
+
 	for _, segment := range segments {
 		if segment != "" {
-			if child, ok := n.children[segment]; ok {
-				n = child
-			} else {
-				found := false
-				for key, child := range n.children {
-					if strings.HasPrefix(key, ":") {
+			found := false
+			for _, child := range currentNode.children {
+				if child.path == segment || strings.HasPrefix(child.path, ":") {
+					if strings.HasPrefix(child.path, ":") {
+						c.SetParam(child.param, segment)
 						c.SetResource(child.resource)
-						c.SetParam(key[1:], segment)
-						c.Resource().SetParam(key[1:], segment)
-						found = true
-						n = child
-						break
+						child.resource.SetParam(child.param, segment)
 					}
+					currentNode = child
+					found = true
+					break
 				}
-				if !found {
-					HTTPError(StatusNotFound, "Resource does not exist", c.Response().Writer, i.Logger)
-					return nil
-				}
+			}
+			if !found {
+				i.sendHTTPError(StatusNotFound, "Resource does not exist", c.Response().Writer, i.Logger)
+				return nil
 			}
 		}
 	}
-	return n
+	return currentNode
 }
 
 // handleRequestNode handles the request node by calling the appropriate handler.
 func (i *Itsy) handleRequestNode(n *node, c Context, req *http.Request, res http.ResponseWriter) {
 	if n == nil {
-		HTTPError(StatusNotFound, "Resource does not exist", res, i.Logger)
+		i.sendHTTPError(StatusNotFound, "Resource does not exist", res, i.Logger)
 		return
 	}
 
 	if n.resource != nil {
 		handler := n.resource.Handler(req.Method)
 		if handler == nil {
-			HTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
+			i.sendHTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
 			return
 		}
 		handlerWithHypermedia := HypermediaMiddleware(handler)
 		if handlerWithHypermedia != nil {
 			handlerWithHypermedia(c)
 		} else {
-			HTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
+			i.sendHTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
 		}
 	} else {
-		HTTPError(StatusNotFound, "Resource does not exist", res, i.Logger)
+		i.sendHTTPError(StatusNotFound, "Resource does not exist", res, i.Logger)
 	}
 }
 
