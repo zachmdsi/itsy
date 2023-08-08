@@ -46,4 +46,6 @@ In this example, we define a simple resource that returns a "Hello, world!" mess
 
 ## Contributing
 
+**Itsy is still in early development.**
+
 We welcome contributions to itsy! If you'd like to contribute, please open an issue or submit a pull request.
