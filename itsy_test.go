@@ -8,7 +8,7 @@ import (
 )
 
 type TestResource struct {
-	*BaseResource
+	Resource
 }
 
 func TestGET(t *testing.T) {

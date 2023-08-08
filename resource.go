@@ -26,7 +26,7 @@ type (
 		Path() string // Get the path of the resource.
 	}
 	// BaseResource is the base implementation of the Resource interface.
-	BaseResource struct {
+	baseResource struct {
 		handlers   map[string]HandlerFunc
 		hypermedia *Hypermedia
 		itsy       *Itsy
@@ -34,14 +34,14 @@ type (
 		path       string
 	}
 	// CustomResource extends the BaseResource to allow resources with custom fields to contain hypermedia controls.
-	CustomResource struct {
-		BaseResource
+	customResource struct {
+		baseResource
 	}
 )
 
 // newBaseResource creates a new base resource.
-func newBaseResource(path string, i *Itsy) *BaseResource {
-	return &BaseResource{
+func newBaseResource(path string, i *Itsy) *baseResource {
+	return &baseResource{
 		handlers:   make(map[string]HandlerFunc),
 		hypermedia: &Hypermedia{Controls: make(map[string]HypermediaControl)},
 		itsy:       i,
@@ -51,14 +51,14 @@ func newBaseResource(path string, i *Itsy) *BaseResource {
 }
 
 // newCustomResource creates a new custom resource.
-func newCustomResource(path string, i *Itsy) *CustomResource {
-	return &CustomResource{
-		BaseResource: *newBaseResource(path, i),
+func newCustomResource(path string, i *Itsy) *customResource {
+	return &customResource{
+		baseResource: *newBaseResource(path, i),
 	}
 }
 
 // Link links to another resource.
-func (r *BaseResource) Link(res Resource, rel string) error {
+func (r *baseResource) Link(res Resource, rel string) error {
 	path := res.Path()
 	if !r.Itsy().ResourceExists(path) {
 		return errors.New("Resource does not exist")
@@ -83,7 +83,7 @@ func (l *Link) Render(c Context) string {
 }
 
 // Links gets the links of the resource.
-func (r *BaseResource) Links() map[string]Link {
+func (r *baseResource) Links() map[string]Link {
 	links := make(map[string]Link)
 	for rel, control := range r.hypermedia.Controls {
 		if link, ok := control.(*Link); ok {
@@ -94,12 +94,12 @@ func (r *BaseResource) Links() map[string]Link {
 }
 
 // Hypermedia gets the hypermedia of the resource.
-func (r *BaseResource) Hypermedia() *Hypermedia {
+func (r *baseResource) Hypermedia() *Hypermedia {
 	return r.hypermedia
 }
 
 // Handler gets the handler of the resource for the given method.
-func (r *BaseResource) Handler(method string) HandlerFunc {
+func (r *baseResource) Handler(method string) HandlerFunc {
 	handler, ok := r.handlers[method]
 	if !ok {
 		return nil
@@ -108,26 +108,26 @@ func (r *BaseResource) Handler(method string) HandlerFunc {
 }
 
 // GET calls the handler when the resource is requested with the GET method.
-func (r *BaseResource) GET(handler HandlerFunc) {
+func (r *baseResource) GET(handler HandlerFunc) {
 	r.handlers[GET] = handler
 }
 
 // Path gets the path of the resource.
-func (r *BaseResource) Path() string {
+func (r *baseResource) Path() string {
 	return r.path
 }
 
 // Itsy gets the main framework instance.
-func (r *BaseResource) Itsy() *Itsy {
+func (r *baseResource) Itsy() *Itsy {
 	return r.itsy
 }
 
 // GetParams gets the parameters of the resource.
-func (r *BaseResource) GetParams() map[string]string {
+func (r *baseResource) GetParams() map[string]string {
 	return r.params
 }
 
 // SetParam sets a parameter.
-func (r *BaseResource) SetParam(name, value string) {
+func (r *baseResource) SetParam(name, value string) {
 	r.params[name] = value
 }

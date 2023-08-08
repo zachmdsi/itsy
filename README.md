@@ -21,7 +21,7 @@ import (
 )
 
 type HelloWorldResource struct {
-  itsy.BaseResource
+  itsy.Resource
 }
 
 func main() {
