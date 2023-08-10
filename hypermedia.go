@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
 	"go.uber.org/zap"
@@ -24,29 +23,7 @@ type (
 		Href string // The URL of the resource.
 		Rel  string // The relationship of the resource to the current resource.
 	}
-	// responseWriterWrapper is a wrapper around the response writer.
-	responseWriterWrapper struct {
-		writer     io.Writer
-		statusCode int
-		original   http.ResponseWriter
-	}
 )
-
-// Write writes to the response.
-func (res *responseWriterWrapper) Write(b []byte) (n int, err error) {
-	return res.writer.Write(b)
-}
-
-// Header gets the header of the response.
-func (res *responseWriterWrapper) Header() http.Header {
-	return res.original.Header()
-}
-
-// WriteHeader writes the header of the response.
-func (res *responseWriterWrapper) WriteHeader(code int) {
-	res.statusCode = code
-	res.original.WriteHeader(code)
-}
 
 // HypermediaMiddleware is a middleware that processes a handler and adds hypermedia controls to the response.
 func HypermediaMiddleware(next HandlerFunc) HandlerFunc {

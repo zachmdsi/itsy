@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 type (
@@ -27,6 +28,7 @@ type (
 	}
 	// BaseResource is the base implementation of the Resource interface.
 	baseResource struct {
+		mu         sync.Mutex
 		handlers   map[string]HandlerFunc
 		hypermedia *Hypermedia
 		itsy       *Itsy
@@ -59,6 +61,9 @@ func newCustomResource(path string, i *Itsy) *customResource {
 
 // Link links to another resource.
 func (r *baseResource) Link(res Resource, rel string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	path := res.Path()
 	if !r.Itsy().ResourceExists(path) {
 		return errors.New("Resource does not exist")
@@ -129,5 +134,8 @@ func (r *baseResource) GetParams() map[string]string {
 
 // SetParam sets a parameter.
 func (r *baseResource) SetParam(name, value string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	r.params[name] = value
 }

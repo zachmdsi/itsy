@@ -2,6 +2,7 @@ package itsy
 
 import (
 	"errors"
+	"io"
 	"net/http"
 )
 
@@ -12,13 +13,19 @@ type (
 		Writer     http.ResponseWriter // The HTTP response writer.
 		StatusCode int                 // The HTTP status code.
 	}
+	// responseWriterWrapper is a wrapper around the response writer.
+	responseWriterWrapper struct {
+		writer     io.Writer
+		statusCode int
+		original   http.ResponseWriter
+	}
 )
 
 // NewResponse creates a new response instance.
 func NewResponse(res http.ResponseWriter, i *Itsy) *Response {
 	return &Response{
-		Writer:     res,
 		itsy:       i,
+		Writer:     res,
 		StatusCode: -1,
 	}
 }
@@ -56,4 +63,20 @@ func (r *Response) WriteString(s string) error {
 	}
 
 	return nil
+}
+
+// Write writes to the response.
+func (res *responseWriterWrapper) Write(b []byte) (n int, err error) {
+	return res.writer.Write(b)
+}
+
+// Header gets the header of the response.
+func (res *responseWriterWrapper) Header() http.Header {
+	return res.original.Header()
+}
+
+// WriteHeader writes the header of the response.
+func (res *responseWriterWrapper) WriteHeader(code int) {
+	res.statusCode = code
+	res.original.WriteHeader(code)
 }

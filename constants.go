@@ -23,11 +23,14 @@ const (
 	StatusInternalServerError = http.StatusInternalServerError // 500
 
 	// Define HTTP Header Names
-	HeaderAccept      = "Accept"
-	HeaderContentType = "Content-Type"
+	HeaderAccept        = "Accept"
+	HeaderContentType   = "Content-Type"
+	HeaderAuthorization = "Authorization"
 
 	// Define MIME Types
-	MIMETextHTML = "text/html"
+	MIMETextHTML  = "text/html"
+	MIMEAppJSON   = "application/json"
+	MIMETextPlain = "text/plain"
 )
 
 // Define a map of HTTP status codes to error messages.

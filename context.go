@@ -1,6 +1,9 @@
 package itsy
 
-import "net/http"
+import (
+	"net/http"
+	"sync"
+)
 
 type (
 	// Context describes the context of a request.
@@ -16,6 +19,7 @@ type (
 		Itsy() *Itsy                 // The main framework instance.
 	}
 	baseContext struct {
+		mu       sync.Mutex
 		req      *http.Request
 		res      *Response
 		resource Resource
@@ -36,12 +40,40 @@ func newBaseContext(req *http.Request, res *Response, resource Resource, path st
 	}
 }
 
-func (c *baseContext) Request() *http.Request      { return c.req }
-func (c *baseContext) Response() *Response         { return c.res }
-func (c *baseContext) Resource() Resource          { return c.resource }
-func (c *baseContext) SetResource(res Resource)    { c.resource = res }
-func (c *baseContext) SetParam(name, value string) { c.params[name] = value }
-func (c *baseContext) GetParam(name string) string { return c.params[name] }
-func (c *baseContext) Params() map[string]string   { return c.params }
-func (c *baseContext) Path() string                { return c.path }
-func (c *baseContext) Itsy() *Itsy                 { return c.itsy }
+func (c *baseContext) Request() *http.Request {
+	return c.req
+}
+
+func (c *baseContext) Response() *Response {
+	return c.res
+}
+
+func (c *baseContext) Resource() Resource {
+	return c.resource
+}
+
+func (c *baseContext) SetResource(res Resource) {
+	c.resource = res
+}
+
+func (c *baseContext) SetParam(name, value string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.params[name] = value
+}
+
+func (c *baseContext) GetParam(name string) string {
+	return c.params[name]
+}
+
+func (c *baseContext) Params() map[string]string {
+	return c.params
+}
+
+func (c *baseContext) Path() string {
+	return c.path
+}
+func (c *baseContext) Itsy() *Itsy {
+	return c.itsy
+}
