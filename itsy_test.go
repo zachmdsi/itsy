@@ -7,16 +7,12 @@ import (
 	"testing"
 )
 
-type TestResource struct {
-	Resource
-}
-
 func TestGET(t *testing.T) {
 	// Create a new Itsy instance.
 	i := New()
 
 	// Register a resource.
-	r := i.Register("/", &TestResource{})
+	r := i.Register("/")
 
 	// Register a GET handler.
 	r.GET(func(c Context) error {
@@ -52,7 +48,7 @@ func TestGETWithParams(t *testing.T) {
 	i := New()
 
 	// Register a resource.
-	r := i.Register("/hello/:name", &TestResource{})
+	r := i.Register("/hello/:name")
 
 	// Register a GET handler.
 	r.GET(func(c Context) error {
@@ -112,7 +108,7 @@ func TestUnsupportedMethod(t *testing.T) {
 	i := New()
 
 	// Register a resource but don't add a POST handler.
-	r := i.Register("/test", &TestResource{})
+	r := i.Register("/test")
 	r.GET(func(c Context) error {
 		return c.Response().WriteString("Should not be called")
 	})

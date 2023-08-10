@@ -15,7 +15,7 @@ type (
 		router    *router             // Used to route requests to resources.
 		resources map[string]Resource // A map of resource names to resources.
 
-		Logger *zap.Logger // Uses zap for logging.
+		Logger *zap.Logger  // Uses zap for logging.
 		Server *http.Server // The HTTP server.
 	}
 	// HandlerFunc is a function that handles a request.
@@ -137,11 +137,11 @@ func (i *Itsy) handleRequestNode(n *node, c Context, req *http.Request, res http
 }
 
 // Register registers a resource to the Itsy instance.
-func (i *Itsy) Register(path string, resource Resource) Resource {
-	customResource := newCustomResource(path, i)
-	i.resources[path] = customResource
-	i.router.addRoute(path, customResource)
-	return customResource
+func (i *Itsy) Register(path string) Resource {
+	r := newBaseResource(path, i)
+	i.resources[path] = r
+	i.router.addRoute(path, r)
+	return r
 }
 
 // SetResource sets a resource given a path.
@@ -170,11 +170,11 @@ func (i *Itsy) Run(port ...string) {
 		serverPort = port[0]
 	}
 	i.Server = &http.Server{
-		Addr:    serverPort,
-		Handler: i,
-		ReadTimeout: 5 * time.Second,
-		WriteTimeout: 10 * time.Second, 
-	}	
+		Addr:         serverPort,
+		Handler:      i,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
 
 	i.Logger.Info("Listening on port " + serverPort)
 	err := i.Server.ListenAndServe()

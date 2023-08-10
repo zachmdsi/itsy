@@ -20,16 +20,12 @@ import (
   "itsy"
 )
 
-type HelloWorldResource struct {
-  itsy.Resource
-}
-
 func main() {
   // Create a new itsy instance.
   itsy := itsy.New()
 
   // Add a resource.
-  r := itsy.Register("/hello", &HelloWorldResource{})
+  r := itsy.Register("/hello")
 
   // Add a GET handler to the resource.
   r.GET(func(c Context) error {

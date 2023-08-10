@@ -11,7 +11,7 @@ func BenchmarkItsy(b *testing.B) {
 	i := New()
 
 	// Register a resource.
-	r := i.Register("/", &TestResource{})
+	r := i.Register("/")
 
 	// Register a GET handler.
 	r.GET(func(c Context) error {

@@ -17,11 +17,11 @@ func TestResourceLinking(t *testing.T) {
 	}
 
 	// Register a new resource
-	resource1 := i.Register("/resource1", nil)
+	resource1 := i.Register("/resource1")
 	resource1.GET(dummyHandler)
 
 	// Register another resource to link to
-	resource2 := i.Register("/resource2", nil)
+	resource2 := i.Register("/resource2")
 	resource2.GET(dummyHandler)
 
 	// Link resource1 to resource2
@@ -41,7 +41,7 @@ func TestResourceLinking(t *testing.T) {
 	}
 
 	// Create a resource that doesn't exist in Itsy's resources
-	resource3 := newCustomResource("/resource3", i)
+	resource3 := newBaseResource("/resource3", i)
 
 	// Test linking resource1 to a non-existing resource
 	err = resource1.Link(resource3, "nonexistent")
@@ -62,14 +62,14 @@ func TestMultipleResourceLinking(t *testing.T) {
 	}
 
 	// Register primary resource
-	primaryResource := itsy.Register("/primary", &TestResource{})
+	primaryResource := itsy.Register("/primary")
 	primaryResource.GET(dummyHandler)
 
 	// Register multiple resources to link to
 	linkedResources := []Resource{}
 	for i := 1; i <= 3; i++ {
 		resourcePath := "/linked" + strconv.Itoa(i)
-		linkedResource := itsy.Register(resourcePath, &TestResource{})
+		linkedResource := itsy.Register(resourcePath)
 		linkedResource.GET(dummyHandler)
 		linkedResources = append(linkedResources, linkedResource)
 
@@ -99,14 +99,14 @@ func TestParameterizedResourceLinking(t *testing.T) {
 	i := New()
 
 	// Register a primary resource with a parameterized route
-	primaryResource := i.Register("/primary/:id", &TestResource{})
+	primaryResource := i.Register("/primary/:id")
 	primaryResource.GET(func(c Context) error {
 		id := c.GetParam("id")
 		return c.Response().WriteString("Primary Resource with ID: " + id)
 	})
 
 	// Register a linked resource with a parameterized route
-	linkedResource := i.Register("/linked/:id", &TestResource{})
+	linkedResource := i.Register("/linked/:id")
 	linkedResource.GET(func(c Context) error {
 		id := c.GetParam("id")
 		return c.Response().WriteString("Linked Resource with ID: " + id)
@@ -148,7 +148,7 @@ func TestMultipleParameterResourceLinking(t *testing.T) {
 	i := New()
 
 	// Register a primary resource with multiple parameters
-	productResource := i.Register("/products/:category/:id", &TestResource{})
+	productResource := i.Register("/products/:category/:id")
 	productResource.GET(func(c Context) error {
 		category := c.GetParam("category")
 		id := c.GetParam("id")
@@ -156,7 +156,7 @@ func TestMultipleParameterResourceLinking(t *testing.T) {
 	})
 
 	// Register a linked resource also with multiple parameters
-	reviewResource := i.Register("/reviews/:category/:id", &TestResource{})
+	reviewResource := i.Register("/reviews/:category/:id")
 	reviewResource.GET(func(c Context) error {
 		category := c.GetParam("category")
 		id := c.GetParam("id")
