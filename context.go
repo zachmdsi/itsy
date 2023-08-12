@@ -32,7 +32,7 @@ type (
 
 func newBaseContext(req *http.Request, res *Response, resource Resource, path string, itsy *Itsy) *baseContext {
 	return &baseContext{
-		mu: 	  sync.RWMutex{},
+		mu:       sync.RWMutex{},
 		req:      req,
 		res:      res,
 		resource: resource,

@@ -17,12 +17,12 @@ type (
 		Handler(method string) HandlerFunc   // Get the handler of the resource.
 		Itsy() *Itsy                         // Get the main framework instance.
 		Link(res Resource, rel string) error // Link to another resource.
-		Links() map[string]*Link              // Get the links of the resource.
+		Links() map[string]*Link             // Get the links of the resource.
 		Path() string                        // Get the path of the resource.
 	}
 	// BaseResource is the base implementation of the Resource interface.
 	baseResource struct {
-		mu 	       sync.RWMutex
+		mu         sync.RWMutex
 		handlers   map[string]HandlerFunc
 		hypermedia *Hypermedia
 		itsy       *Itsy
@@ -61,6 +61,7 @@ func (r *baseResource) Link(res Resource, rel string) error {
 
 	return nil
 }
+
 // Links gets the links of the resource.
 func (r *baseResource) Links() map[string]*Link {
 	links := make(map[string]*Link)

@@ -20,8 +20,8 @@ type (
 	}
 	// Link is a link to another resource.
 	Link struct {
-		Href string 	  // The URL of the resource.
-		Rel  string       // The relationship of the resource to the current resource.
+		Href string // The URL of the resource.
+		Rel  string // The relationship of the resource to the current resource.
 	}
 )
 
@@ -66,7 +66,6 @@ func HypermediaMiddleware(next HandlerFunc) HandlerFunc {
 		wrapper.Write([]byte("</body></html>"))
 		wrapper.statusCode = StatusOK
 
-		c.Itsy().Logger.Info("Response", zap.Int("status", wrapper.statusCode))
 		return nil
 	}
 }

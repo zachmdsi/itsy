@@ -1,7 +1,9 @@
 package itsy
 
 import (
+	"bufio"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"go.uber.org/zap"
@@ -22,15 +24,18 @@ type (
 	Middleware func(Context, HandlerFunc) HandlerFunc
 )
 
-// setupLogger creates a new logger instance.
 func setupLogger() *zap.Logger {
+	// Encoder Configuration
 	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeTime = zapcore.EpochTimeEncoder // Optimized time encoding
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	encoder := zapcore.NewConsoleEncoder(encoderConfig)
-	writeSyncer := zapcore.Lock(os.Stdout)
-	core := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
-	logger := zap.New(core)
+	encoder := zapcore.NewJSONEncoder(encoderConfig)
+
+	logWriter := zapcore.AddSync(bufio.NewWriter(os.Stdout))
+
+	core := zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), logWriter), zapcore.DebugLevel)
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+
 	return logger
 }
 
@@ -137,7 +142,7 @@ func (i *Itsy) handleRequestNode(n *node, c Context, req *http.Request, res http
 // Register registers a resource to the Itsy instance.
 func (i *Itsy) Register(path string) Resource {
 	baseResource := newBaseResource(path, i)
-	i.resources[path] = baseResource 
+	i.resources[path] = baseResource
 	i.router.addRoute(path, baseResource)
 	return baseResource
 }
