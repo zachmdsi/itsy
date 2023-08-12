@@ -145,8 +145,6 @@ func TestParameterizedResourceLinking(t *testing.T) {
 	}
 }
 
-/*
-
 func TestMultipleParameterResourceLinking(t *testing.T) {
 	// Create a new Itsy instance
 	i := New()
@@ -156,7 +154,9 @@ func TestMultipleParameterResourceLinking(t *testing.T) {
 	productResource.GET(func(c Context) error {
 		category := c.GetParam("category")
 		id := c.GetParam("id")
-		return c.Response().WriteString("Product in category " + category + " with ID: " + id)
+		c.CreateField("category", category)
+		c.CreateField("id", id)
+		return c.WriteHTML()
 	})
 
 	// Register a linked resource also with multiple parameters
@@ -164,7 +164,9 @@ func TestMultipleParameterResourceLinking(t *testing.T) {
 	reviewResource.GET(func(c Context) error {
 		category := c.GetParam("category")
 		id := c.GetParam("id")
-		return c.Response().WriteString("Review for product in category " + category + " with ID: " + id)
+		c.CreateField("category", category)
+		c.CreateField("id", id)
+		return c.WriteHTML()
 	})
 
 	// Link the product resource to the review resource
@@ -185,17 +187,20 @@ func TestMultipleParameterResourceLinking(t *testing.T) {
 
 	response := recorder.Body.String()
 
-	expectedBody := "Product in category electronics with ID: 123"
+	expectedCategory := "category: electronics"
+	expectedId := "id: 123"
 	expectedLink := "<a href=\"/reviews/electronics/123\">view review</a>"
 
 	// Check if the response contains the expected body and link
-	if !strings.Contains(response, expectedBody) {
-		t.Fatalf("Expected response to contain '%s', but got: %s", expectedBody, response)
+	if !strings.Contains(response, expectedCategory) {
+		t.Fatalf("Expected response to contain '%s', but got: %s", expectedCategory, response)
+	}
+
+	if !strings.Contains(response, expectedId) {
+		t.Fatalf("Expected response to contain '%s', but got: %s", expectedId, response)
 	}
 
 	if !strings.Contains(response, expectedLink) {
 		t.Fatalf("Expected response to contain link to '%s', but got: %s", expectedLink, response)
 	}
 }
-
-*/
