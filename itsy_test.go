@@ -16,7 +16,7 @@ func TestGET(t *testing.T) {
 
 	// Register a GET handler.
 	r.GET(func(c Context) error {
-		return c.Response().WriteString("Hello, world")
+		return c.WriteString("Hello, world")
 	})
 
 	// Create a test server.
@@ -37,7 +37,7 @@ func TestGET(t *testing.T) {
 	}
 
 	// Check the response body.
-	expected := "<html>\n  <body>\nHello, world  </body>\n</html>\n"
+	expected := "Hello, world"
 	if string(body) != expected {
 		t.Errorf("Expected %q, got %q", expected, string(body))
 	}
@@ -52,7 +52,7 @@ func TestGETWithParams(t *testing.T) {
 
 	// Register a GET handler.
 	r.GET(func(c Context) error {
-		return c.Response().WriteString("Hello, " + c.GetParam("name"))
+		return c.WriteString("Hello, " + c.GetParam("name"))
 	})
 
 	// Create a test server.
@@ -73,7 +73,7 @@ func TestGETWithParams(t *testing.T) {
 	}
 
 	// Check the response body.
-	expected := "<html>\n  <body>\nHello, world  </body>\n</html>\n"
+	expected := "Hello, world"
 	if string(body) != expected {
 		t.Errorf("Expected %q, got %q", expected, string(body))
 	}
@@ -110,7 +110,7 @@ func TestUnsupportedMethod(t *testing.T) {
 	// Register a resource but don't add a POST handler.
 	r := i.Register("/test")
 	r.GET(func(c Context) error {
-		return c.Response().WriteString("Should not be called")
+		return c.WriteString("Should not be called")
 	})
 
 	// Create a test server.
