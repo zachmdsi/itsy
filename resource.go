@@ -10,7 +10,11 @@ import (
 type (
 	// Resource is the interface that describes a RESTful resource.
 	Resource interface {
-		GET(handler HandlerFunc)             // Set the GET handler of the resource.
+		GET(HandlerFunc)                     // Set the GET handler of the resource.
+		POST(HandlerFunc)                    // Set the POST handler of the resource.
+		PUT(HandlerFunc)                     // Set the PUT handler of the resource.
+		PATCH(HandlerFunc)                   // Set the PATCH handler of the resource.
+		DELETE(HandlerFunc)                  // Set the DELETE handler of the resource.
 		GetParams() map[string]string        // Get the parameters of the resource.
 		SetParam(name, value string)         // Set a parameter.
 		Hypermedia() *Hypermedia             // Get the hypermedia of the resource.
@@ -35,7 +39,7 @@ type (
 func newBaseResource(path string, i *Itsy) *baseResource {
 	return &baseResource{
 		handlers:   make(map[string]HandlerFunc),
-		hypermedia: NewHypermedia(),
+		hypermedia: newHypermedia(),
 		itsy:       i,
 		params:     make(map[string]string),
 		path:       path,
@@ -57,20 +61,14 @@ func (r *baseResource) Link(res Resource, rel string) error {
 	}
 
 	link := Link{Href: path, Rel: rel}
-	r.hypermedia.Controls[rel] = &link
+	r.hypermedia.Links[rel] = &link
 
 	return nil
 }
 
 // Links gets the links of the resource.
 func (r *baseResource) Links() map[string]*Link {
-	links := make(map[string]*Link)
-	for rel, control := range r.hypermedia.Controls {
-		if link, ok := control.(*Link); ok {
-			links[rel] = link
-		}
-	}
-	return links
+	return r.hypermedia.Links
 }
 
 // Hypermedia gets the hypermedia of the resource.
@@ -90,6 +88,26 @@ func (r *baseResource) Handler(method string) HandlerFunc {
 // GET calls the handler when the resource is requested with the GET method.
 func (r *baseResource) GET(handler HandlerFunc) {
 	r.handlers[GET] = handler
+}
+
+// POST calls the handler when the resource is requested with the POST method.
+func (r *baseResource) POST(handler HandlerFunc) {
+	r.handlers[POST] = handler
+}
+
+// PUT calls the handler when the resource is requested with the PUT method.
+func (r *baseResource) PUT(handler HandlerFunc) {
+	r.handlers[PUT] = handler
+}
+
+// PATCH calls the handler when the resource is requested with the PATCH method.
+func (r *baseResource) PATCH(handler HandlerFunc) {
+	r.handlers[PATCH] = handler
+}
+
+// DELETE calls the handler when the resource is requested with the DELETE method.
+func (r *baseResource) DELETE(handler HandlerFunc) {
+	r.handlers[DELETE] = handler
 }
 
 // Path gets the path of the resource.

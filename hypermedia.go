@@ -2,17 +2,14 @@ package itsy
 
 import (
 	"fmt"
+	"strings"
 )
 
 type (
 	// Hypermedia represents a set of hypermedia controls.
 	Hypermedia struct {
-		Controls map[string]HypermediaControl // The hypermedia controls.
-		Fields   map[string]interface{}       // The fields.
-	}
-	// HypermediaControl is the interface that describes a hypermedia control.
-	HypermediaControl interface {
-		Render(Context) string
+		Links  map[string]*Link       // The links.
+		Fields map[string]interface{} // The fields.
 	}
 	// Field describes a custom key value pair.
 	Field struct {
@@ -26,10 +23,11 @@ type (
 	}
 )
 
-func NewHypermedia() *Hypermedia {
+// newHypermedia creates a new hypermedia instance.
+func newHypermedia() *Hypermedia {
 	return &Hypermedia{
-		Controls: make(map[string]HypermediaControl),
-		Fields:   make(map[string]interface{}),
+		Links:  make(map[string]*Link),
+		Fields: make(map[string]interface{}),
 	}
 }
 
@@ -40,5 +38,12 @@ func (l *Link) SetHref(href string) {
 
 // Render renders the link.
 func (l *Link) Render(c Context) string {
-	return fmt.Sprintf("<a href=\"%s\">%s</a>", l.Href, l.Rel)
+	href := l.Href
+	if params := c.Resource().GetParams(); params != nil {
+		for param, value := range params {
+			placeholder := fmt.Sprintf(":%s", param)
+			href = strings.Replace(href, placeholder, value, -1)
+		}
+	}
+	return fmt.Sprintf("<a href=\"%s\">%s</a>", href, l.Rel)
 }

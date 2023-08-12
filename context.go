@@ -1,6 +1,7 @@
 package itsy
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ type (
 		Mutex() *sync.RWMutex                      // The mutex.
 		WriteString(s string) error                // Write a string to the response.
 		WriteHTML() error                          // Write the response as HTML.
+		WriteJSON() error                          // Write the response as JSON.
 		CreateField(key string, value interface{}) // Create a field.
 	}
 	baseContext struct {
@@ -95,7 +97,7 @@ func (c *baseContext) WriteHTML() error {
 	wrapper.Write([]byte("<html>\n  <body>\n"))
 
 	// Write the fields to the response.
-	if fields := c.Resource().Hypermedia().Fields; fields != nil {
+	if fields := c.Resource().Hypermedia().Fields; len(fields) > 0 {
 		wrapper.Write([]byte("    <div>Fields:\n"))
 		for key, value := range fields {
 			wrapper.Write([]byte(fmt.Sprintf("      <div>%s: %v</div>\n", key, value)))
@@ -119,13 +121,11 @@ func (c *baseContext) WriteHTML() error {
 // writeHypermediaControls writes the hypermedia controls to the response.
 func writeHypermediaControls(c Context, writer io.Writer) error {
 	if resource := c.Resource(); resource != nil {
-		hypermedia := resource.Hypermedia()
-		if hypermedia != nil && len(hypermedia.Controls) > 0 {
+		links := resource.Links()
+		if links != nil {
 			writer.Write([]byte("    <div>Links:\n"))
-			for _, control := range hypermedia.Controls {
-				if err := writeLink(c, control, writer); err != nil {
-					return err
-				}
+			for _, link := range links {
+				writer.Write([]byte(link.Render(c)))
 			}
 			writer.Write([]byte("    </div>\n"))
 		}
@@ -133,16 +133,66 @@ func writeHypermediaControls(c Context, writer io.Writer) error {
 	return nil
 }
 
-// writeLink writes a link to the response.
-func writeLink(c Context, control HypermediaControl, writer io.Writer) error {
-	if link, ok := control.(*Link); ok {
-		if params := c.Resource().GetParams(); params != nil {
-			for param, value := range params {
-				placeholder := fmt.Sprintf(":%s", param)
-				link.SetHref(strings.Replace(link.Href, placeholder, value, -1))
-			}
-		}
-		writer.Write([]byte(fmt.Sprintf("        <a href=\"%s\">%s</a>\n", link.Href, link.Rel)))
+// WriteJSON writes the response as JSON.
+func (c *baseContext) WriteJSON() error {
+	originalWriter := c.Response().Writer
+	if originalWriter == nil {
+		return errors.New("Response writer is nil")
 	}
+
+	// Create a map to hold the response data.
+	responseData := make(map[string]interface{})
+
+	// Write the fields and links to the response data.
+	writeFields(c, responseData)
+	writeLinks(c, responseData)
+
+	// Serialize the response data to JSON.
+	jsonData, err := json.Marshal(responseData)
+	if err != nil {
+		return err
+	}
+
+	// Set the content type to JSON.
+	originalWriter.Header().Set("Content-Type", "application/json")
+
+	// Write the JSON data to the response.
+	originalWriter.Write(jsonData)
+
 	return nil
+}
+
+// getFullURL constructs the full URL from the request and link.
+func getFullURL(c Context, link *Link) string {
+	scheme := "http"
+	if c.Request().TLS != nil {
+		scheme = "https"
+	}
+	host := c.Request().Host
+	return fmt.Sprintf("%s://%s%s", scheme, host, link.Href)
+}
+
+// writeFields writes the fields to the response data.
+func writeFields(c Context, responseData map[string]interface{}) {
+	if fields := c.Resource().Hypermedia().Fields; fields != nil {
+		responseData["fields"] = fields
+	}
+}
+
+// writeLinks writes the hypermedia controls to the response data.
+func writeLinks(c Context, responseData map[string]interface{}) {
+	links := make(map[string]string)
+	if resource := c.Resource(); resource != nil {
+		for rel, link := range resource.Links() {
+			if params := c.Resource().GetParams(); params != nil {
+				for param, value := range params {
+					placeholder := fmt.Sprintf(":%s", param)
+					link.SetHref(strings.Replace(link.Href, placeholder, value, -1))
+				}
+			}
+			fullURL := getFullURL(c, link)
+			links[rel] = fullURL
+		}
+	}
+	responseData["links"] = links
 }

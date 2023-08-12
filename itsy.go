@@ -123,17 +123,34 @@ func (i *Itsy) handleRequestNode(n *node, c Context, req *http.Request, res http
 	}
 
 	if n.resource != nil {
-		handler := n.resource.Handler(req.Method)
-		if handler == nil {
+		switch req.Method {
+		case GET:
+			if n.resource.Handler(GET) == nil {
+				i.sendHTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
+				return
+			}
+			callHandler(n.resource, GET, c)
+		case POST:
+			if n.resource.Handler(POST) == nil {
+				i.sendHTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
+				return
+			}
+			callHandler(n.resource, POST, c)
+		default:
 			i.sendHTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
-			return
-		}
-		if err := handler(c); err != nil {
-			i.sendHTTPError(StatusInternalServerError, "Handler error", res, i.Logger)
 		}
 	} else {
 		i.sendHTTPError(StatusNotFound, "Resource does not exist", res, i.Logger)
 	}
+}
+
+// callHandler calls the handler of the resource.
+func callHandler(resource Resource, method string, c Context) error {
+	handler := resource.Handler(method)
+	if handler == nil {
+		return nil
+	}
+	return handler(c)
 }
 
 // Register registers a resource to the Itsy instance.
