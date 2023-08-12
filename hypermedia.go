@@ -20,10 +20,20 @@ type (
 	}
 	// Link is a link to another resource.
 	Link struct {
-		Href string // The URL of the resource.
-		Rel  string // The relationship of the resource to the current resource.
+		Href string 	  // The URL of the resource.
+		Rel  string       // The relationship of the resource to the current resource.
 	}
 )
+
+// SetHref sets the href of the link.
+func (l *Link) SetHref(href string) {
+	l.Href = href
+}
+
+// Render renders the link.
+func (l *Link) Render(c Context) string {
+	return fmt.Sprintf("<a href=\"%s\">%s</a>", l.Href, l.Rel)
+}
 
 // HypermediaMiddleware is a middleware that processes a handler and adds hypermedia controls to the response.
 func HypermediaMiddleware(next HandlerFunc) HandlerFunc {
@@ -68,9 +78,11 @@ func writeHypermediaControls(c Context, writer io.Writer) error {
 		if hypermedia != nil && len(hypermedia.Controls) > 0 {
 			writer.Write([]byte("<div>Links:"))
 			for _, control := range hypermedia.Controls {
+				c.Mutex().Lock()
 				if err := writeLink(c, control, writer); err != nil {
 					return err
 				}
+				c.Mutex().Unlock()
 			}
 			writer.Write([]byte("</div>"))
 		}
@@ -84,7 +96,7 @@ func writeLink(c Context, control HypermediaControl, writer io.Writer) error {
 		if params := c.Resource().GetParams(); params != nil {
 			for param, value := range params {
 				placeholder := fmt.Sprintf(":%s", param)
-				link.Href = strings.Replace(link.Href, placeholder, value, -1)
+				link.SetHref(strings.Replace(link.Href, placeholder, value, -1))
 			}
 		}
 		writer.Write([]byte(fmt.Sprintf("<a href=\"%s\">%s</a>", link.Href, link.Rel)))

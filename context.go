@@ -17,9 +17,10 @@ type (
 		Params() map[string]string   // The parameters.
 		Path() string                // The path of the request.
 		Itsy() *Itsy                 // The main framework instance.
+		Mutex() *sync.RWMutex        // The mutex.
 	}
 	baseContext struct {
-		mu       sync.Mutex
+		mu       sync.RWMutex
 		req      *http.Request
 		res      *Response
 		resource Resource
@@ -31,6 +32,7 @@ type (
 
 func newBaseContext(req *http.Request, res *Response, resource Resource, path string, itsy *Itsy) *baseContext {
 	return &baseContext{
+		mu: 	  sync.RWMutex{},
 		req:      req,
 		res:      res,
 		resource: resource,
@@ -57,9 +59,6 @@ func (c *baseContext) SetResource(res Resource) {
 }
 
 func (c *baseContext) SetParam(name, value string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.params[name] = value
 }
 
@@ -74,6 +73,11 @@ func (c *baseContext) Params() map[string]string {
 func (c *baseContext) Path() string {
 	return c.path
 }
+
 func (c *baseContext) Itsy() *Itsy {
 	return c.itsy
+}
+
+func (c *baseContext) Mutex() *sync.RWMutex {
+	return &c.mu
 }

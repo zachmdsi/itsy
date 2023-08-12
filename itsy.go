@@ -3,7 +3,6 @@ package itsy
 import (
 	"net/http"
 	"os"
-	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -15,8 +14,7 @@ type (
 		router    *router             // Used to route requests to resources.
 		resources map[string]Resource // A map of resource names to resources.
 
-		Logger *zap.Logger  // Uses zap for logging.
-		Server *http.Server // The HTTP server.
+		Logger *zap.Logger // Uses zap for logging.
 	}
 	// HandlerFunc is a function that handles a request.
 	HandlerFunc func(Context) error
@@ -138,10 +136,10 @@ func (i *Itsy) handleRequestNode(n *node, c Context, req *http.Request, res http
 
 // Register registers a resource to the Itsy instance.
 func (i *Itsy) Register(path string) Resource {
-	r := newBaseResource(path, i)
-	i.resources[path] = r
-	i.router.addRoute(path, r)
-	return r
+	baseResource := newBaseResource(path, i)
+	i.resources[path] = baseResource 
+	i.router.addRoute(path, baseResource)
+	return baseResource
 }
 
 // SetResource sets a resource given a path.
@@ -164,21 +162,17 @@ func (i *Itsy) ResourceExists(path string) bool {
 func (i *Itsy) Run(port ...string) {
 	i.Logger.Info("Starting server...")
 
-	// Configure the server
-	serverPort := DefaultPort
 	if len(port) > 0 {
-		serverPort = port[0]
-	}
-	i.Server = &http.Server{
-		Addr:         serverPort,
-		Handler:      i,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-
-	i.Logger.Info("Listening on port " + serverPort)
-	err := i.Server.ListenAndServe()
-	if err != nil {
-		i.Logger.Fatal("Server error", zap.Error(err))
+		i.Logger.Info("Listening on port " + port[0])
+		err := http.ListenAndServe(port[0], i)
+		if err != nil {
+			i.Logger.Fatal("Server stopped", zap.Error(err))
+		}
+	} else {
+		i.Logger.Info("Listening on port " + DefaultPort)
+		err := http.ListenAndServe(DefaultPort, i)
+		if err != nil {
+			i.Logger.Fatal("Server stopped", zap.Error(err))
+		}
 	}
 }

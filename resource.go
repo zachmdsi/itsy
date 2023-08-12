@@ -17,12 +17,12 @@ type (
 		Handler(method string) HandlerFunc   // Get the handler of the resource.
 		Itsy() *Itsy                         // Get the main framework instance.
 		Link(res Resource, rel string) error // Link to another resource.
-		Links() map[string]Link              // Get the links of the resource.
+		Links() map[string]*Link              // Get the links of the resource.
 		Path() string                        // Get the path of the resource.
 	}
 	// BaseResource is the base implementation of the Resource interface.
 	baseResource struct {
-		mu         sync.Mutex
+		mu 	       sync.RWMutex
 		handlers   map[string]HandlerFunc
 		hypermedia *Hypermedia
 		itsy       *Itsy
@@ -44,9 +44,6 @@ func newBaseResource(path string, i *Itsy) *baseResource {
 
 // Link links to another resource.
 func (r *baseResource) Link(res Resource, rel string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	path := res.Path()
 	if !r.Itsy().ResourceExists(path) {
 		return errors.New("Resource does not exist")
@@ -64,18 +61,12 @@ func (r *baseResource) Link(res Resource, rel string) error {
 
 	return nil
 }
-
-// Render renders the link.
-func (l *Link) Render(c Context) string {
-	return fmt.Sprintf("<a href=\"%s\">%s</a>", l.Href, l.Rel)
-}
-
 // Links gets the links of the resource.
-func (r *baseResource) Links() map[string]Link {
-	links := make(map[string]Link)
+func (r *baseResource) Links() map[string]*Link {
+	links := make(map[string]*Link)
 	for rel, control := range r.hypermedia.Controls {
 		if link, ok := control.(*Link); ok {
-			links[rel] = *link
+			links[rel] = link
 		}
 	}
 	return links
@@ -112,6 +103,9 @@ func (r *baseResource) Itsy() *Itsy {
 
 // GetParams gets the parameters of the resource.
 func (r *baseResource) GetParams() map[string]string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	return r.params
 }
 
