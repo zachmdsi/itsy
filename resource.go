@@ -10,15 +10,15 @@ import (
 type (
 	// Resource is the interface that describes a RESTful resource.
 	Resource interface {
-		GET(handler HandlerFunc)             // Set the GET handler of the resource.
-		GetParams() map[string]string        // Get the parameters of the resource.
-		SetParam(name, value string)         // Set a parameter.
-		Hypermedia() *Hypermedia             // Get the hypermedia of the resource.
-		Handler(method string) HandlerFunc   // Get the handler of the resource.
-		Itsy() *Itsy                         // Get the main framework instance.
-		Link(res Resource, rel string) error // Link to another resource.
-		Links() map[string]*Link             // Get the links of the resource.
-		Path() string                        // Get the path of the resource.
+		GET(handler HandlerFunc)                   // Set the GET handler of the resource.
+		GetParams() map[string]string              // Get the parameters of the resource.
+		SetParam(name, value string)               // Set a parameter.
+		Hypermedia() *Hypermedia                   // Get the hypermedia of the resource.
+		Handler(method string) HandlerFunc         // Get the handler of the resource.
+		Itsy() *Itsy                               // Get the main framework instance.
+		Link(res Resource, rel string) error       // Link to another resource.
+		Links() map[string]*Link                   // Get the links of the resource.
+		Path() string                              // Get the path of the resource.
 	}
 	// BaseResource is the base implementation of the Resource interface.
 	baseResource struct {
