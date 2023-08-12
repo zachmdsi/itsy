@@ -35,7 +35,7 @@ type (
 func newBaseResource(path string, i *Itsy) *baseResource {
 	return &baseResource{
 		handlers:   make(map[string]HandlerFunc),
-		hypermedia: &Hypermedia{Controls: make(map[string]HypermediaControl)},
+		hypermedia: NewHypermedia(),
 		itsy:       i,
 		params:     make(map[string]string),
 		path:       path,

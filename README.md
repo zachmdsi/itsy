@@ -21,24 +21,47 @@ import (
 )
 
 func main() {
-  // Create a new itsy instance.
-  itsy := itsy.New()
+  i := itsy.New()
 
-  // Add a resource.
-  r := itsy.Register("/hello")
+  r1 := i.Register("/main/:id")
+  r2 := i.Register("/linked/:id")
 
-  // Add a GET handler to the resource.
-  r.GET(func(c Context) error {
-    return c.Response().WriteString("Hello, world")
+  r1.GET(func(ctx itsy.Context) error {
+    id := ctx.GetParam("id")
+    ctx.CreateField("Main", id)
+    return ctx.WriteHTML()
   })
 
-  // Start the server.
-  itsy.Run(":8080")
+  r2.GET(func(ctx itsy.Context) error {
+    id := ctx.GetParam("id")
+    ctx.CreateField("Linked", id)
+    return ctx.WriteHTML()
+  })
+
+  r1.Link(r2, "related")
+
+  i.Run(":8080")
 }
 
 ```
 
-In this example, we define a simple resource that returns a "Hello, world!" message when accessed. We then add this resource to our itsy application and start the server.
+In this example, we create two resources, `/main/:id` and `/linked/:id`. The first resource is the main resource, and the second is a related resource. We then define a handler for the main resource that writes a string to the response. Finally, we link the main resource to the related resource, and run the server.
+
+When we run the server and navigate to `http://localhost:8080/main/1`, we see the following response:
+
+```html
+HTTP/1.1 200 OK
+
+<html>
+  <body>
+    <div>Fields:
+      <div>Main: 1</div>
+    </div>
+    <div>Links:
+      <a href="/linked/1">related</a>
+    </div>
+</html>
+```
 
 ## Contributing
 

@@ -1,7 +1,6 @@
 package itsy
 
 import (
-	"errors"
 	"io"
 	"net/http"
 )
@@ -47,22 +46,6 @@ func (r *Response) WriteHeader(code int) {
 		return
 	}
 	r.StatusCode = code
-}
-
-// WriteString writes a string to the response.
-func (r *Response) WriteString(s string) error {
-	data := []byte(s)
-	written, err := r.Write(data)
-	if err != nil {
-		return err
-	}
-
-	if written != len(s) {
-		r.itsy.sendHTTPError(StatusInternalServerError, "Response length mismatch", r.Writer, r.itsy.Logger)
-		return errors.New("Response length mismatch")
-	}
-
-	return nil
 }
 
 // Write writes to the response.

@@ -15,7 +15,7 @@ func BenchmarkItsy(b *testing.B) {
 
 	// Register a GET handler.
 	r.GET(func(c Context) error {
-		return c.Response().WriteString("Hello, world")
+		return c.WriteString("Hello, world")
 	})
 
 	// Create a request.

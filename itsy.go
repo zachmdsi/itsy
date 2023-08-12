@@ -128,11 +128,8 @@ func (i *Itsy) handleRequestNode(n *node, c Context, req *http.Request, res http
 			i.sendHTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
 			return
 		}
-		handlerWithHypermedia := HypermediaMiddleware(handler)
-		if handlerWithHypermedia != nil {
-			handlerWithHypermedia(c)
-		} else {
-			i.sendHTTPError(StatusMethodNotAllowed, "Handler does not exist for the request method", res, i.Logger)
+		if err := handler(c); err != nil {
+			i.sendHTTPError(StatusInternalServerError, "Handler error", res, i.Logger)
 		}
 	} else {
 		i.sendHTTPError(StatusNotFound, "Resource does not exist", res, i.Logger)
