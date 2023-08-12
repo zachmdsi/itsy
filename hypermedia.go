@@ -47,7 +47,7 @@ func HypermediaMiddleware(next HandlerFunc) HandlerFunc {
 		c.Response().Writer = wrapper
 
 		// Write the initial HTML to the response.
-		wrapper.Write([]byte("<html><body>"))
+		wrapper.Write([]byte("<html>\n  <body>\n"))
 
 		// Process the handler.
 		err := next(c)
@@ -63,7 +63,7 @@ func HypermediaMiddleware(next HandlerFunc) HandlerFunc {
 		}
 
 		// Write the final HTML to the response.
-		wrapper.Write([]byte("</body></html>"))
+		wrapper.Write([]byte("  </body>\n</html>\n"))
 		wrapper.statusCode = StatusOK
 
 		return nil
@@ -75,15 +75,13 @@ func writeHypermediaControls(c Context, writer io.Writer) error {
 	if resource := c.Resource(); resource != nil {
 		hypermedia := resource.Hypermedia()
 		if hypermedia != nil && len(hypermedia.Controls) > 0 {
-			writer.Write([]byte("<div>Links:"))
+			writer.Write([]byte("    <div>Links:\n"))
 			for _, control := range hypermedia.Controls {
-				c.Mutex().Lock()
 				if err := writeLink(c, control, writer); err != nil {
 					return err
 				}
-				c.Mutex().Unlock()
 			}
-			writer.Write([]byte("</div>"))
+			writer.Write([]byte("    </div>\n"))
 		}
 	}
 	return nil
@@ -98,7 +96,7 @@ func writeLink(c Context, control HypermediaControl, writer io.Writer) error {
 				link.SetHref(strings.Replace(link.Href, placeholder, value, -1))
 			}
 		}
-		writer.Write([]byte(fmt.Sprintf("<a href=\"%s\">%s</a>", link.Href, link.Rel)))
+		writer.Write([]byte(fmt.Sprintf("        <a href=\"%s\">%s</a>\n", link.Href, link.Rel)))
 	}
 	return nil
 }

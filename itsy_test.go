@@ -37,7 +37,7 @@ func TestGET(t *testing.T) {
 	}
 
 	// Check the response body.
-	expected := "<html><body>Hello, world</body></html>"
+	expected := "<html>\n  <body>\nHello, world  </body>\n</html>\n"
 	if string(body) != expected {
 		t.Errorf("Expected %q, got %q", expected, string(body))
 	}
@@ -73,7 +73,7 @@ func TestGETWithParams(t *testing.T) {
 	}
 
 	// Check the response body.
-	expected := "<html><body>Hello, world</body></html>"
+	expected := "<html>\n  <body>\nHello, world  </body>\n</html>\n"
 	if string(body) != expected {
 		t.Errorf("Expected %q, got %q", expected, string(body))
 	}

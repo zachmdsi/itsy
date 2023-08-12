@@ -130,7 +130,7 @@ func TestParameterizedResourceLinking(t *testing.T) {
 
 	response := recorder.Body.String()
 
-	expectedBody := "<html><body>Primary Resource with ID: 123"
+	expectedBody := "Primary Resource with ID: 123"
 	expectedLink := "<a href=\"/linked/123\">related</a>"
 
 	// Check if the response contains the expected body and link
