@@ -27,14 +27,10 @@ func main() {
   r2 := i.Register("/linked/:id")
 
   r1.GET(func(ctx itsy.Context) error {
-    id := ctx.GetParam("id")
-    ctx.CreateField("Main", id)
     return ctx.WriteHTML()
   })
 
   r2.GET(func(ctx itsy.Context) error {
-    id := ctx.GetParam("id")
-    ctx.CreateField("Linked", id)
     return ctx.WriteHTML()
   })
 
@@ -54,9 +50,6 @@ HTTP/1.1 200 OK
 
 <html>
   <body>
-    <div>Fields:
-      <div>Main: 1</div>
-    </div>
     <div>Links:
       <a href="/linked/1">related</a>
     </div>

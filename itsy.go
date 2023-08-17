@@ -24,35 +24,6 @@ type (
 	Middleware func(Context, HandlerFunc) HandlerFunc
 )
 
-func setupLogger() *zap.Logger {
-	// Encoder Configuration
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.EpochTimeEncoder // Optimized time encoding
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	encoder := zapcore.NewJSONEncoder(encoderConfig)
-
-	logWriter := zapcore.AddSync(bufio.NewWriter(os.Stdout))
-
-	core := zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), logWriter), zapcore.DebugLevel)
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
-
-	return logger
-}
-
-// sendHTTPError writes an error message to the response given a status code
-func (i *Itsy) sendHTTPError(statusCode int, message string, res http.ResponseWriter, logger *zap.Logger) {
-	statusText, ok := httpErrors[statusCode]
-	if !ok {
-		statusText = httpErrors[StatusInternalServerError]
-	}
-
-	errorMessage := statusText + ": " + message
-	logger.Error("HTTP Error", zap.Int("status", statusCode), zap.String("message", errorMessage))
-
-	res.WriteHeader(statusCode)
-	res.Write([]byte(errorMessage))
-}
-
 // New creates a new Itsy instance.
 func New() *Itsy {
 	i := &Itsy{
@@ -61,6 +32,49 @@ func New() *Itsy {
 	}
 	i.router = newRouter(i)
 	return i
+}
+
+// Register registers a resource to the Itsy instance.
+func (i *Itsy) Register(path string) Resource {
+	baseResource := newBaseResource(path, i)
+	i.resources[path] = baseResource
+	i.router.addRoute(path, baseResource)
+	return baseResource
+}
+
+// SetResource sets a resource given a path.
+func (i *Itsy) SetResource(path string, resource Resource) {
+	i.resources[path] = resource
+}
+
+// Resource returns a resource given a path.
+func (i *Itsy) Resource(path string) Resource {
+	return i.resources[path]
+}
+
+// ResourceExists returns true if a resource exists given a path.
+func (i *Itsy) ResourceExists(path string) bool {
+	_, exists := i.resources[path]
+	return exists
+}
+
+// Run runs the Itsy instance.
+func (i *Itsy) Run(port ...string) {
+	i.Logger.Info("Starting server...")
+
+	if len(port) > 0 {
+		i.Logger.Info("Listening on port " + port[0])
+		err := http.ListenAndServe(port[0], i)
+		if err != nil {
+			i.Logger.Fatal("Server stopped", zap.Error(err))
+		}
+	} else {
+		i.Logger.Info("Listening on port " + DefaultPort)
+		err := http.ListenAndServe(DefaultPort, i)
+		if err != nil {
+			i.Logger.Fatal("Server stopped", zap.Error(err))
+		}
+	}
 }
 
 // ServeHTTP is the main entry point for the Itsy instance.
@@ -97,9 +111,8 @@ func (i *Itsy) processRouteSegments(c Context, path string) *node {
 			for _, child := range currentNode.children {
 				if child.path == segment || (child.regex != nil && child.regex.MatchString(segment)) {
 					if child.regex != nil && child.regex.MatchString(segment) {
-						c.SetParam(child.param, segment)
+						c.AddParam(child.param, segment)
 						c.SetResource(child.resource)
-						child.resource.SetParam(child.param, segment)
 					}
 					currentNode = child
 					found = true
@@ -153,45 +166,32 @@ func callHandler(resource Resource, method string, c Context) error {
 	return handler(c)
 }
 
-// Register registers a resource to the Itsy instance.
-func (i *Itsy) Register(path string) Resource {
-	baseResource := newBaseResource(path, i)
-	i.resources[path] = baseResource
-	i.router.addRoute(path, baseResource)
-	return baseResource
+// setupLogger sets up the logger for the Itsy instance.
+func setupLogger() *zap.Logger {
+	// Encoder Configuration
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.EpochTimeEncoder // Optimized time encoding
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoder := zapcore.NewJSONEncoder(encoderConfig)
+
+	logWriter := zapcore.AddSync(bufio.NewWriter(os.Stdout))
+
+	core := zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), logWriter), zapcore.DebugLevel)
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+
+	return logger
 }
 
-// SetResource sets a resource given a path.
-func (i *Itsy) SetResource(path string, resource Resource) {
-	i.resources[path] = resource
-}
-
-// Resource returns a resource given a path.
-func (i *Itsy) Resource(path string) Resource {
-	return i.resources[path]
-}
-
-// ResourceExists returns true if a resource exists given a path.
-func (i *Itsy) ResourceExists(path string) bool {
-	_, exists := i.resources[path]
-	return exists
-}
-
-// Run runs the Itsy instance.
-func (i *Itsy) Run(port ...string) {
-	i.Logger.Info("Starting server...")
-
-	if len(port) > 0 {
-		i.Logger.Info("Listening on port " + port[0])
-		err := http.ListenAndServe(port[0], i)
-		if err != nil {
-			i.Logger.Fatal("Server stopped", zap.Error(err))
-		}
-	} else {
-		i.Logger.Info("Listening on port " + DefaultPort)
-		err := http.ListenAndServe(DefaultPort, i)
-		if err != nil {
-			i.Logger.Fatal("Server stopped", zap.Error(err))
-		}
+// sendHTTPError writes an error message to the response given a status code
+func (i *Itsy) sendHTTPError(statusCode int, message string, res http.ResponseWriter, logger *zap.Logger) {
+	statusText, ok := httpErrors[statusCode]
+	if !ok {
+		statusText = httpErrors[StatusInternalServerError]
 	}
+
+	errorMessage := statusText + ": " + message
+	logger.Error("HTTP Error", zap.Int("status", statusCode), zap.String("message", errorMessage))
+
+	res.WriteHeader(statusCode)
+	res.Write([]byte(errorMessage))
 }

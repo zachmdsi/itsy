@@ -52,7 +52,7 @@ func TestGETWithParams(t *testing.T) {
 
 	// Register a GET handler.
 	r.GET(func(c Context) error {
-		return c.WriteString("Hello, " + c.GetParam("name"))
+		return c.WriteString("Hello, " + c.GetParamValue("name"))
 	})
 
 	// Create a test server.

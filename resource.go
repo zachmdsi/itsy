@@ -2,9 +2,6 @@ package itsy
 
 import (
 	"errors"
-	"fmt"
-	"strings"
-	"sync"
 )
 
 type (
@@ -15,8 +12,6 @@ type (
 		PUT(HandlerFunc)                     // Set the PUT handler of the resource.
 		PATCH(HandlerFunc)                   // Set the PATCH handler of the resource.
 		DELETE(HandlerFunc)                  // Set the DELETE handler of the resource.
-		GetParams() map[string]string        // Get the parameters of the resource.
-		SetParam(name, value string)         // Set a parameter.
 		Hypermedia() *Hypermedia             // Get the hypermedia of the resource.
 		Handler(method string) HandlerFunc   // Get the handler of the resource.
 		Itsy() *Itsy                         // Get the main framework instance.
@@ -26,11 +21,9 @@ type (
 	}
 	// BaseResource is the base implementation of the Resource interface.
 	baseResource struct {
-		mu         sync.RWMutex
 		handlers   map[string]HandlerFunc
 		hypermedia *Hypermedia
 		itsy       *Itsy
-		params     map[string]string
 		path       string
 	}
 )
@@ -41,7 +34,6 @@ func newBaseResource(path string, i *Itsy) *baseResource {
 		handlers:   make(map[string]HandlerFunc),
 		hypermedia: newHypermedia(),
 		itsy:       i,
-		params:     make(map[string]string),
 		path:       path,
 	}
 }
@@ -51,13 +43,6 @@ func (r *baseResource) Link(res Resource, rel string) error {
 	path := res.Path()
 	if !r.Itsy().ResourceExists(path) {
 		return errors.New("Resource does not exist")
-	}
-
-	if params := res.GetParams(); params != nil {
-		for param, value := range params {
-			placeholder := fmt.Sprintf(":%s", param)
-			path = strings.Replace(path, placeholder, value, -1)
-		}
 	}
 
 	link := Link{Href: path, Rel: rel}
@@ -118,20 +103,4 @@ func (r *baseResource) Path() string {
 // Itsy gets the main framework instance.
 func (r *baseResource) Itsy() *Itsy {
 	return r.itsy
-}
-
-// GetParams gets the parameters of the resource.
-func (r *baseResource) GetParams() map[string]string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	return r.params
-}
-
-// SetParam sets a parameter.
-func (r *baseResource) SetParam(name, value string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.params[name] = value
 }
