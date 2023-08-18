@@ -31,6 +31,12 @@ const (
 	MIMETextHTML  = "text/html"
 	MIMEAppJSON   = "application/json"
 	MIMETextPlain = "text/plain"
+
+	linkTemplate = `
+	{{range .}}
+	<a href="{{.Href}}" rel="{{.Rel}}"></a>
+	{{end}}
+	`
 )
 
 // Define a map of HTTP status codes to error messages.
@@ -42,4 +48,5 @@ var httpErrors = map[int]string{
 	StatusNotFound:            "Not Found",
 	StatusMethodNotAllowed:    "Method Not Allowed",
 	StatusInternalServerError: "Internal Server Error",
+
 }

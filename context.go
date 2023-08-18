@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"text/template"
 
 	"go.uber.org/zap"
 )
@@ -22,21 +23,34 @@ type (
 		Itsy() *Itsy                      // The main framework instance.
 		WriteString(s string) error       // Write a string to the response.
 		WriteHTML() error                 // Write the response as HTML.
+		SetTemplateRenderer(renderer TemplateRenderer) // Set the template renderer.
+		GetTemplateRenderer() TemplateRenderer // Get the template renderer.
 	}
+	// TemplateRenderer is the interface that describes a template renderer.
+	TemplateRenderer interface {
+		RenderTemplate(w io.Writer, c Context) error // Render a template.
+		RenderLinks(c Context, w io.Writer, links []Link) error // Render links.
+	}
+	// Param is a parameter.
 	Param struct {
 		Name  string
 		Value string
 	}
+	// defaultTemplateRenderer is the default template renderer.
+	defaultTemplateRenderer struct {}
+	// baseContext is the base implementation of the Context interface.
 	baseContext struct {
-		req      *http.Request
-		res      *Response
-		resource Resource
-		params   []Param
-		path     string
-		itsy     *Itsy
+		req              *http.Request
+		res              *Response
+		resource         Resource
+		params           []Param
+		path             string
+		itsy             *Itsy
+		templateRenderer TemplateRenderer
 	}
 )
 
+// newBaseContext creates a new base context.
 func newBaseContext(req *http.Request, res *Response, resource Resource, path string, itsy *Itsy) *baseContext {
 	return &baseContext{
 		req:      req,
@@ -48,12 +62,21 @@ func newBaseContext(req *http.Request, res *Response, resource Resource, path st
 	}
 }
 
+// Context interface implementation.
 func (c *baseContext) Request() *http.Request   { return c.req }
 func (c *baseContext) Response() *Response      { return c.res }
 func (c *baseContext) Resource() Resource       { return c.resource }
 func (c *baseContext) SetResource(res Resource) { c.resource = res }
 func (c *baseContext) Path() string             { return c.path }
 func (c *baseContext) Itsy() *Itsy              { return c.itsy }
+
+func (c *baseContext) SetTemplateRenderer(renderer TemplateRenderer) {
+	c.templateRenderer = renderer
+}
+
+func (c *baseContext) GetTemplateRenderer() TemplateRenderer {
+	return c.templateRenderer
+}
 
 func (c *baseContext) GetParams() []Param {
 	return c.params
@@ -97,36 +120,54 @@ func (c *baseContext) WriteHTML() error {
 		return errors.New("Response writer is nil")
 	}
 
-	wrapper := &responseWriterWrapper{writer: originalWriter, original: originalWriter}
-	c.Response().Writer = wrapper
+	renderer := c.GetTemplateRenderer()
+	if renderer == nil {
+		renderer = &defaultTemplateRenderer{}
+	}
 
-	// Write the initial HTML to the response.
-	wrapper.Write([]byte("<html>\n  <body>\n"))
-
-	// Write the hypermedia controls to the response.
-	if err := writeHypermediaControls(c, wrapper); err != nil {
+	// Render the main HTML template.
+	if err := renderer.RenderTemplate(originalWriter, c); err != nil {
 		return err
 	}
 
-	// Write the final HTML to the response.
-	wrapper.Write([]byte("  </body>\n</html>\n"))
-
-	wrapper.statusCode = StatusOK
+	// Render the links using the standard link template. 
+	links := c.Resource().Links()
+	if len(links) > 0 {
+		// Render the links.
+		if err := renderer.RenderLinks(c, originalWriter, links); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-// writeHypermediaControls writes the hypermedia controls to the response.
-func writeHypermediaControls(c Context, writer io.Writer) error {
-	if resource := c.Resource(); resource != nil {
-		links := resource.Links()
-		if links != nil {
-			writer.Write([]byte("    <div>Links:\n"))
-			for _, link := range links {
-				writer.Write([]byte(link.Render(c)))
-			}
-			writer.Write([]byte("    </div>\n"))
-		}
+// Default template renderer implementation.
+func (r *defaultTemplateRenderer) RenderTemplate(w io.Writer, c Context) error {
+	return nil
+}
+
+func (r *defaultTemplateRenderer) RenderLinks(c Context, w io.Writer, links []Link) error {
+	// Modify the href attributes to replace the placeholders with the corresponding parameter values.
+	for i, link := range links {
+		href := link.Href
+		href = link.re.ReplaceAllStringFunc(href, func(s string) string {
+			paramName := s[1:]
+			return c.GetParamValue(paramName)
+		})
+		links[i].Href = href
 	}
+
+	// Parse the standard link template.
+	t, err := template.New("links").Parse(linkTemplate)
+	if err != nil {
+		return err
+	}
+
+	// Execute the template with the links and write the result to the response
+	if err := t.Execute(w, links); err != nil {
+		return err
+	}
+
 	return nil
 }

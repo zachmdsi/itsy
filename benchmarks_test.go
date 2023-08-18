@@ -27,22 +27,3 @@ func BenchmarkTest(b *testing.B) {
 		i.ServeHTTP(rr, req)
 	}
 }
-
-func BenchmarkConcurrency(b *testing.B) {
-	i := New()
-
-	r1 := i.Register("/test/:id")
-	r2 := i.Register("/test2/:id")
-
-	r1.GET(func(ctx Context) error {
-		return ctx.WriteHTML()
-	})
-
-	r2.GET(func(ctx Context) error {
-		return ctx.WriteHTML()
-	})
-
-	r1.Link(r2, "related")
-
-	i.Run()
-}

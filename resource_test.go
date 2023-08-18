@@ -25,7 +25,7 @@ func TestResourceLinking(t *testing.T) {
 	resource2.GET(dummyHandler)
 
 	// Link resource1 to resource2
-	err := resource1.Link(resource2, "related")
+	err := resource1.Link("/resource2", "related")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -36,20 +36,20 @@ func TestResourceLinking(t *testing.T) {
 	i.ServeHTTP(rr, req)
 
 	// Check if the link to resource2 is correctly rendered in the response
-	if !strings.Contains(rr.Body.String(), "<a href=\"/resource2\">related</a>") {
+	if !strings.Contains(rr.Body.String(), "<a href=\"/resource2\" rel=\"related\"></a>") {
 		t.Fatalf("expected link to /resource2, got %v", rr.Body.String())
 	}
 
 	// Create a resource that doesn't exist in Itsy's resources
-	resource3 := newBaseResource("/resource3", i)
+	newBaseResource("/resource3", i)
 
 	// Test linking resource1 to a non-existing resource
-	err = resource1.Link(resource3, "nonexistent")
+	err = resource1.Link("/resource3", "nonexistent")
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
-	if err.Error() != "Resource does not exist" {
-		t.Fatalf("expected resource doesn't not exist error, got %v", err)
+	if err.Error() != "resource does not exist" {
+		t.Fatalf("expected resource does not exist, got %v", err)
 	}
 }
 
@@ -74,7 +74,7 @@ func TestMultipleResourceLinking(t *testing.T) {
 		linkedResources = append(linkedResources, linkedResource)
 
 		// Link primary resource to each linked resource
-		err := primaryResource.Link(linkedResource, "related"+strconv.Itoa(i))
+		err := primaryResource.Link(resourcePath, "related"+strconv.Itoa(i))
 		if err != nil {
 			t.Fatalf("expected no error while linking %s, got %v", resourcePath, err)
 		}
@@ -87,7 +87,7 @@ func TestMultipleResourceLinking(t *testing.T) {
 
 	// Check if the links to all linked resources are correctly rendered in the response
 	for i, linkedResource := range linkedResources {
-		expectedLink := "<a href=\"" + linkedResource.Path() + "\">related" + strconv.Itoa(i+1) + "</a>"
+		expectedLink := "<a href=\"" + linkedResource.Path() + "\" rel=\"related" + strconv.Itoa(i+1) + "\"></a>"
 		if !strings.Contains(rr.Body.String(), expectedLink) {
 			t.Fatalf("expected link to %s, but it was not found in the response", linkedResource.Path())
 		}
@@ -111,7 +111,7 @@ func TestParameterizedResourceLinking(t *testing.T) {
 	})
 
 	// Link the primary resource to the linked resource
-	err := primaryResource.Link(linkedResource, "related")
+	err := primaryResource.Link("/linked/:id", "related")
 	if err != nil {
 		t.Fatalf("Failed to link resources: %v", err)
 	}
@@ -128,14 +128,12 @@ func TestParameterizedResourceLinking(t *testing.T) {
 
 	response := recorder.Body.String()
 
-	expectedLink := "<a href=\"/linked/123\">related</a>"
+	expectedLink := "<a href=\"/linked/123\" rel=\"related\"></a>"
 
 	if !strings.Contains(response, expectedLink) {
 		t.Fatalf("Expected response to contain link to '/linked/123', but got: %s", response)
 	}
 }
-
-/*
 
 func TestMultipleParameterResourceLinking(t *testing.T) {
 	// Create a new Itsy instance
@@ -144,25 +142,17 @@ func TestMultipleParameterResourceLinking(t *testing.T) {
 	// Register a primary resource with multiple parameters
 	productResource := i.Register("/products/:category/:id")
 	productResource.GET(func(c Context) error {
-		category := c.GetParam("category")
-		id := c.GetParam("id")
-		c.CreateField("category", category)
-		c.CreateField("id", id)
 		return c.WriteHTML()
 	})
 
 	// Register a linked resource also with multiple parameters
 	reviewResource := i.Register("/reviews/:category/:id")
 	reviewResource.GET(func(c Context) error {
-		category := c.GetParam("category")
-		id := c.GetParam("id")
-		c.CreateField("category", category)
-		c.CreateField("id", id)
 		return c.WriteHTML()
 	})
 
 	// Link the product resource to the review resource
-	err := productResource.Link(reviewResource, "view review")
+	err := productResource.Link("/reviews/:category/:id", "view review")
 	if err != nil {
 		t.Fatalf("Failed to link resources: %v", err)
 	}
@@ -179,22 +169,9 @@ func TestMultipleParameterResourceLinking(t *testing.T) {
 
 	response := recorder.Body.String()
 
-	expectedCategory := "category: electronics"
-	expectedId := "id: 123"
-	expectedLink := "<a href=\"/reviews/electronics/123\">view review</a>"
-
-	// Check if the response contains the expected body and link
-	if !strings.Contains(response, expectedCategory) {
-		t.Fatalf("Expected response to contain '%s', but got: %s", expectedCategory, response)
-	}
-
-	if !strings.Contains(response, expectedId) {
-		t.Fatalf("Expected response to contain '%s', but got: %s", expectedId, response)
-	}
+	expectedLink := "<a href=\"/reviews/electronics/123\" rel=\"view review\"></a>"
 
 	if !strings.Contains(response, expectedLink) {
 		t.Fatalf("Expected response to contain link to '%s', but got: %s", expectedLink, response)
 	}
 }
-
-*/

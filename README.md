@@ -34,7 +34,7 @@ func main() {
     return ctx.WriteHTML()
   })
 
-  r1.Link(r2, "related")
+  r1.Link("/linked/:id", "related")
 
   i.Run(":8080")
 }

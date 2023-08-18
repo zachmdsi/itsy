@@ -1,25 +1,23 @@
 package itsy
 
-import (
-	"errors"
-)
+import "errors"
 
 type (
 	// Resource is the interface that describes a RESTful resource.
 	Resource interface {
-		GET(HandlerFunc)                     // Set the GET handler of the resource.
-		POST(HandlerFunc)                    // Set the POST handler of the resource.
-		PUT(HandlerFunc)                     // Set the PUT handler of the resource.
-		PATCH(HandlerFunc)                   // Set the PATCH handler of the resource.
-		DELETE(HandlerFunc)                  // Set the DELETE handler of the resource.
-		Hypermedia() *Hypermedia             // Get the hypermedia of the resource.
-		Handler(method string) HandlerFunc   // Get the handler of the resource.
-		Itsy() *Itsy                         // Get the main framework instance.
-		Link(res Resource, rel string) error // Link to another resource.
-		Links() map[string]*Link             // Get the links of the resource.
-		Path() string                        // Get the path of the resource.
+		GET(HandlerFunc)                   // Set the GET handler of the resource.
+		POST(HandlerFunc)                  // Set the POST handler of the resource.
+		PUT(HandlerFunc)                   // Set the PUT handler of the resource.
+		PATCH(HandlerFunc)                 // Set the PATCH handler of the resource.
+		DELETE(HandlerFunc)                // Set the DELETE handler of the resource.
+		Hypermedia() *Hypermedia           // Get the hypermedia of the resource.
+		Handler(method string) HandlerFunc // Get the handler of the resource.
+		Itsy() *Itsy                       // Get the main framework instance.
+		Link(href, rel string) error       // Link to another resource.
+		Links() []Link           // Get the links of the resource.
+		Path() string                      // Get the path of the resource.
 	}
-	// BaseResource is the base implementation of the Resource interface.
+	// baseResource is the base implementation of the Resource interface.
 	baseResource struct {
 		handlers   map[string]HandlerFunc
 		hypermedia *Hypermedia
@@ -38,28 +36,32 @@ func newBaseResource(path string, i *Itsy) *baseResource {
 	}
 }
 
+// Link management
+
 // Link links to another resource.
-func (r *baseResource) Link(res Resource, rel string) error {
-	path := res.Path()
-	if !r.Itsy().ResourceExists(path) {
-		return errors.New("Resource does not exist")
+func (r *baseResource) Link(path, rel string) error {
+	if exists := r.itsy.ResourceExists(path); !exists {
+		return errors.New("resource does not exist")
 	}
 
-	link := Link{Href: path, Rel: rel}
-	r.hypermedia.Links[rel] = &link
+	r.hypermedia.Links = append(r.hypermedia.Links, newLink(path, rel))
 
 	return nil
 }
 
 // Links gets the links of the resource.
-func (r *baseResource) Links() map[string]*Link {
+func (r *baseResource) Links() []Link {
 	return r.hypermedia.Links
 }
+
+// Hypermedia management
 
 // Hypermedia gets the hypermedia of the resource.
 func (r *baseResource) Hypermedia() *Hypermedia {
 	return r.hypermedia
 }
+
+// Handler management
 
 // Handler gets the handler of the resource for the given method.
 func (r *baseResource) Handler(method string) HandlerFunc {
@@ -69,6 +71,8 @@ func (r *baseResource) Handler(method string) HandlerFunc {
 	}
 	return handler
 }
+
+// HTTP Method Handlers
 
 // GET calls the handler when the resource is requested with the GET method.
 func (r *baseResource) GET(handler HandlerFunc) {

@@ -1,2 +1,3 @@
-cpu.prof
-itsy.test.exe
+*.prof
+*.out
+*.exe
