@@ -48,5 +48,4 @@ var httpErrors = map[int]string{
 	StatusNotFound:            "Not Found",
 	StatusMethodNotAllowed:    "Method Not Allowed",
 	StatusInternalServerError: "Internal Server Error",
-
 }

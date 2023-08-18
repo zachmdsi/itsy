@@ -19,7 +19,7 @@ type (
 func newHypermedia() *Hypermedia {
 	return &Hypermedia{
 		Links: make([]Link, 0),
-	}	
+	}
 }
 
 // newLink creates a new link.

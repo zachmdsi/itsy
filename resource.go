@@ -14,7 +14,7 @@ type (
 		Handler(method string) HandlerFunc // Get the handler of the resource.
 		Itsy() *Itsy                       // Get the main framework instance.
 		Link(href, rel string) error       // Link to another resource.
-		Links() []Link           // Get the links of the resource.
+		Links() []Link                     // Get the links of the resource.
 		Path() string                      // Get the path of the resource.
 	}
 	// baseResource is the base implementation of the Resource interface.

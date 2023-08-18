@@ -12,23 +12,23 @@ import (
 type (
 	// Context describes the context of a request.
 	Context interface {
-		Request() *http.Request           // The HTTP request.
-		Response() *Response              // The HTTP response.
-		Resource() Resource               // The resource.
-		SetResource(res Resource)         // Set the resource.
-		AddParam(name, value string)      // Set a parameter.
-		GetParamValue(name string) string // Get a parameter.
-		GetParams() []Param               // The parameters.
-		Path() string                     // The path of the request.
-		Itsy() *Itsy                      // The main framework instance.
-		WriteString(s string) error       // Write a string to the response.
-		WriteHTML() error                 // Write the response as HTML.
+		Request() *http.Request                        // The HTTP request.
+		Response() *Response                           // The HTTP response.
+		Resource() Resource                            // The resource.
+		SetResource(res Resource)                      // Set the resource.
+		AddParam(name, value string)                   // Set a parameter.
+		GetParamValue(name string) string              // Get a parameter.
+		GetParams() []Param                            // The parameters.
+		Path() string                                  // The path of the request.
+		Itsy() *Itsy                                   // The main framework instance.
+		WriteString(s string) error                    // Write a string to the response.
+		WriteHTML() error                              // Write the response as HTML.
 		SetTemplateRenderer(renderer TemplateRenderer) // Set the template renderer.
-		GetTemplateRenderer() TemplateRenderer // Get the template renderer.
+		GetTemplateRenderer() TemplateRenderer         // Get the template renderer.
 	}
 	// TemplateRenderer is the interface that describes a template renderer.
 	TemplateRenderer interface {
-		RenderTemplate(w io.Writer, c Context) error // Render a template.
+		RenderTemplate(w io.Writer, c Context) error            // Render a template.
 		RenderLinks(c Context, w io.Writer, links []Link) error // Render links.
 	}
 	// Param is a parameter.
@@ -37,7 +37,7 @@ type (
 		Value string
 	}
 	// defaultTemplateRenderer is the default template renderer.
-	defaultTemplateRenderer struct {}
+	defaultTemplateRenderer struct{}
 	// baseContext is the base implementation of the Context interface.
 	baseContext struct {
 		req              *http.Request
@@ -130,7 +130,7 @@ func (c *baseContext) WriteHTML() error {
 		return err
 	}
 
-	// Render the links using the standard link template. 
+	// Render the links using the standard link template.
 	links := c.Resource().Links()
 	if len(links) > 0 {
 		// Render the links.
