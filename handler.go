@@ -21,8 +21,7 @@ func (i *Itsy) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 // prepareRequestContext creates a new context for the request.
 func (i *Itsy) prepareRequestContext(res http.ResponseWriter, req *http.Request, path string) Context {
-	wrapper := &responseWriterWrapper{original: res}
-	c := newBaseContext(req, NewResponse(wrapper.original, i), i.Resource(path), path, i)
+	c := newBaseContext(req, NewResponse(res, i), i.Resource(path), path, i)
 	if c.Request().Header.Get(HeaderAccept) == "" {
 		c.Request().Header.Set(HeaderContentType, MIMETextHTML)
 	}
